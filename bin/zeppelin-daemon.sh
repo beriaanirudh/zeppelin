@@ -52,7 +52,9 @@ ZEPPELIN_LOGFILE="${ZEPPELIN_LOG_DIR}/zeppelin-${ZEPPELIN_IDENT_STRING}-${HOSTNA
 ZEPPELIN_OUTFILE="${ZEPPELIN_LOG_DIR}/zeppelin-${ZEPPELIN_IDENT_STRING}-${HOSTNAME}.out"
 ZEPPELIN_PID="${ZEPPELIN_PID_DIR}/zeppelin-${ZEPPELIN_IDENT_STRING}-${HOSTNAME}.pid"
 ZEPPELIN_MAIN=org.apache.zeppelin.server.ZeppelinServer
-JAVA_OPTS+=" -Dzeppelin.log.file=${ZEPPELIN_LOGFILE}"
+export CONF_JAVA_OPTS=""
+readSparkConf /usr/lib/spark/conf/spark-defaults.conf
+JAVA_OPTS+=" ${CONF_JAVA_OPTS} -Dzeppelin.log.file=${ZEPPELIN_LOGFILE}"
 
 # construct classpath
 if [[ -d "${ZEPPELIN_HOME}/zeppelin-interpreter/target/classes" ]]; then

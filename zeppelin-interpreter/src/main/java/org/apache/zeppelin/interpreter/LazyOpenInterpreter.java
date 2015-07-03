@@ -19,6 +19,7 @@ package org.apache.zeppelin.interpreter;
 
 import java.net.URL;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Properties;
 
 import org.apache.zeppelin.interpreter.thrift.InterpreterCompletion;
@@ -90,13 +91,28 @@ public class LazyOpenInterpreter
 
   @Override
   public InterpreterResult interpret(String st, InterpreterContext context) {
-    open();
+    try {
+      open();
+    } catch (Throwable e) {
+      //This try catch is so that we can add "Error happened while creating interpreter."
+      //to exception message. Catching proper exceptions in interpret are necessary becoz
+      //these get shown on UI
+      throw new InterpreterException("Error happened while creating interpreter. Error: " + 
+          e.getMessage(), e); 
+    }
     return intp.interpret(st, context);
   }
 
   @Override
   public void cancel(InterpreterContext context) {
-    open();
+    try {
+      open();
+    } catch (Throwable e) {
+      //code for exception catching in cancel, getProgress and completion is not stictly reqd.
+      //Added it just to keep logs clean. open function throws an exception if it fails 
+      //to create sc. reason for failure to create sc can be some wrong parameter
+      return;
+    }
     intp.cancel(context);
   }
 
@@ -107,7 +123,12 @@ public class LazyOpenInterpreter
 
   @Override
   public int getProgress(InterpreterContext context) {
-    open();
+    try {
+      open();
+    } catch (Throwable e) {
+      //Just report 0 as progress if we fail to create sc
+      return 0;
+    }
     return intp.getProgress(context);
   }
 
@@ -118,9 +139,14 @@ public class LazyOpenInterpreter
 
   @Override
   public List<InterpreterCompletion> completion(String buf, int cursor) {
-    open();
-    List completion = intp.completion(buf, cursor);
-    return completion;
+    try {
+      open();
+      List completion = intp.completion(buf, cursor);
+      return completion;
+    } catch (Throwable e) {
+      //Return emtry array for completion if we fail to create sc
+      return new ArrayList<InterpreterCompletion>();
+    }
   }
 
   @Override
@@ -147,4 +173,5 @@ public class LazyOpenInterpreter
   public void setClassloaderUrls(URL [] urls) {
     intp.setClassloaderUrls(urls);
   }
+
 }

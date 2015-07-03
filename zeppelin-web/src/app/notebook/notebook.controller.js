@@ -596,7 +596,8 @@ angular.module('zeppelinWebApp').controller('NotebookCtrl',
           selectedIntp[setting.group] = true;
         }
       }
-      $scope.showSetting = true;
+      $scope.saveSetting();
+      //$scope.showSetting = true;
     }
   };
 

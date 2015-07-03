@@ -22,6 +22,8 @@ import java.util.Date;
 import java.util.Map;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.zeppelin.interpreter.InterpreterResult;
+import org.apache.zeppelin.interpreter.InterpreterUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +34,6 @@ import org.slf4j.LoggerFactory;
  *  - should be run on a separate thread
  *  - maintains internal state: it's status
  *  - supports listeners who are updated on status change
- *
  *  Job class is serialized/deserialized and used server<->client communication
  *  and saving/loading jobs from disk.
  *  Changing/adding/deleting non transitive field name need consideration of that.
@@ -182,14 +183,14 @@ public abstract class Job {
       LOGGER.error("Job failed", e);
       progressUpdator.terminate();
       this.exception = e;
-      result = e.getMessage();
+      result = new InterpreterResult(InterpreterResult.Code.ERROR, e.getMessage());
       errorMessage = getStack(e);
       dateFinished = new Date();
     } catch (Throwable e) {
       LOGGER.error("Job failed", e);
       progressUpdator.terminate();
       this.exception = e;
-      result = e.getMessage();
+      result = new InterpreterResult(InterpreterResult.Code.ERROR, e.getMessage());
       errorMessage = getStack(e);
       dateFinished = new Date();
     } finally {

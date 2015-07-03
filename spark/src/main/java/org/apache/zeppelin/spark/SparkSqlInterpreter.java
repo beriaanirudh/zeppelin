@@ -179,4 +179,5 @@ public class SparkSqlInterpreter extends Interpreter {
   public List<InterpreterCompletion> completion(String buf, int cursor) {
     return null;
   }
+
 }

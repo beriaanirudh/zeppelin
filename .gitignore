@@ -17,10 +17,13 @@ zeppelin-server/derby.log
 
 lens/lens-cli-hist.log
 
+*.swp
+*.swm
+*.swo
 # conf file
-conf/zeppelin-env.sh
-conf/zeppelin-env.cmd
-conf/zeppelin-site.xml
+#conf/zeppelin-env.sh
+#conf/zeppelin-env.cmd
+#conf/zeppelin-site.xml
 conf/keystore
 conf/truststore
 conf/interpreter.json
@@ -48,16 +51,16 @@ zeppelin-web/bower_components
 /r/lib/
 
 # project level
-/logs/
-/run/
-/metastore_db/
-/*.log
-/jobs/
-/zan-repo/
-/drivers/
-/warehouse/
-/notebook/
-/local-repo/
+logs/
+run/
+metastore_db/
+*.log
+jobs/
+zan-repo/
+drivers/
+warehouse/
+notebook/
+#local-repo/
 
 **/sessions/
 **/data/

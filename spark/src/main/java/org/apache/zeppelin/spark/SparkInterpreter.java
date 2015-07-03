@@ -35,6 +35,12 @@ import com.google.common.base.Joiner;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.security.UserGroupInformation;
+import java.util.LinkedList;
+import java.util.Properties;
+import java.util.Set;
+import java.util.ArrayList;
+
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
 import org.apache.spark.SparkEnv;
@@ -350,6 +356,26 @@ public class SparkInterpreter extends Interpreter {
 
     return sparkSession;
   }
+  
+  private void recursiveListFiles(File path, ArrayList<String> jarpaths){
+    if (path.exists() == false) {
+      return;
+    }
+    File[] files = path.listFiles();
+    if (files == null) {
+      return;
+    }
+    for (File f : files) {
+      if (f.getName().startsWith(".")) {
+        return;
+      } else if (f.isDirectory()) {
+        recursiveListFiles(f, jarpaths);
+        return;
+      } else {
+        jarpaths.add(f.getAbsolutePath());
+      } 
+    }
+  }
 
   public SparkContext createSparkContext() {
     if (Utils.isSpark2()) {
@@ -450,7 +476,7 @@ public class SparkInterpreter extends Interpreter {
     for (Object k : intpProperty.keySet()) {
       String key = (String) k;
       String val = toString(intpProperty.get(key));
-      if (!key.startsWith("spark.") || !val.trim().isEmpty()) {
+      if (!val.trim().isEmpty()) {
         logger.debug(String.format("SparkConf: key = [%s], value = [%s]", key, val));
         conf.set(key, val);
       }
@@ -554,7 +580,6 @@ public class SparkInterpreter extends Interpreter {
         return envValue;
       }
     }
-
     if (propertyName != null && !propertyName.isEmpty()) {
       String propValue = System.getProperty(propertyName);
       if (propValue != null) {
@@ -1427,4 +1452,5 @@ public class SparkInterpreter extends Interpreter {
       }
     }
   }
+
 }

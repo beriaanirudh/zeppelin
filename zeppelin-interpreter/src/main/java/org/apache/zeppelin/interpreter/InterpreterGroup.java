@@ -263,4 +263,8 @@ public class InterpreterGroup extends ConcurrentHashMap<String, List<Interpreter
   public void setAngularRegistryPushed(boolean angularRegistryPushed) {
     this.angularRegistryPushed = angularRegistryPushed;
   }
+
+  public String getProperty(String key){
+    return getProperty().getProperty(key);
+  }
 }

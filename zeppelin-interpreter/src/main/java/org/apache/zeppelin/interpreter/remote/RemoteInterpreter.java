@@ -45,6 +45,9 @@ public class RemoteInterpreter extends Interpreter {
   private final RemoteInterpreterProcessListener remoteInterpreterProcessListener;
   Logger logger = LoggerFactory.getLogger(RemoteInterpreter.class);
   Gson gson = new Gson();
+  private final String REMOTE_INTP_ERR = "Interpreter JVM has stopped responding. " +
+    "Restart interpreter with higher driver memory controlled by setting spark.driver.memory. " +
+    "Drop us a mail at help@qubole.com with notebook link for root cause analysis.";
   private String interpreterRunner;
   private String interpreterPath;
   private String localRepoPath;
@@ -213,7 +216,7 @@ public class RemoteInterpreter extends Interpreter {
       }
     }
   }
-
+  
   @Override
   public void close() {
     RemoteInterpreterProcess interpreterProcess = getInterpreterProcess();
@@ -221,13 +224,19 @@ public class RemoteInterpreter extends Interpreter {
     Client client = null;
     boolean broken = false;
     try {
-      client = interpreterProcess.getClient();
-      if (client != null) {
-        client.close(noteId, className);
+      if (interpreterProcess.isRunning()) {
+        logger.info("Intp Process is running. Closing client.");
+        client = interpreterProcess.getClient();
+        client = interpreterProcess.getClient();
+        if (client != null) {
+          client.close(noteId, className);
+        }
       }
+      logger.info("Run interpreter process running on port: " + 
+          String.valueOf(interpreterProcess.getPort()) + " shutting down.");
     } catch (TException e) {
       broken = true;
-      throw new InterpreterException(e);
+      logger.error("Error Stack Trace", e);
     } catch (Exception e1) {
       throw new InterpreterException(e1);
     } finally {
@@ -295,7 +304,10 @@ public class RemoteInterpreter extends Interpreter {
       return result;
     } catch (TException e) {
       broken = true;
-      throw new InterpreterException(e);
+      //This exception code is hit if remote jvm dies. 
+      //In such cases we should communicate back proper message
+      logInterpreterProcessException(interpreterProcess, "interpret");
+      return new InterpreterResult(InterpreterResult.Code.ERROR, REMOTE_INTP_ERR);
     } finally {
       interpreterProcess.releaseClient(client, broken);
     }
@@ -316,7 +328,8 @@ public class RemoteInterpreter extends Interpreter {
       client.cancel(noteId, className, convert(context));
     } catch (TException e) {
       broken = true;
-      throw new InterpreterException(e);
+      logInterpreterProcessException(interpreterProcess, "cancel");
+      throw new InterpreterException(REMOTE_INTP_ERR, e);
     } finally {
       interpreterProcess.releaseClient(client, broken);
     }
@@ -345,7 +358,8 @@ public class RemoteInterpreter extends Interpreter {
       return formType;
     } catch (TException e) {
       broken = true;
-      throw new InterpreterException(e);
+      logInterpreterProcessException(interpreterProcess, "getFormType");
+      throw new InterpreterException(REMOTE_INTP_ERR, e);
     } finally {
       interpreterProcess.releaseClient(client, broken);
     }
@@ -370,7 +384,8 @@ public class RemoteInterpreter extends Interpreter {
       return client.getProgress(noteId, className, convert(context));
     } catch (TException e) {
       broken = true;
-      throw new InterpreterException(e);
+      logInterpreterProcessException(interpreterProcess, "getProgress");
+      throw new InterpreterException(REMOTE_INTP_ERR, e);
     } finally {
       interpreterProcess.releaseClient(client, broken);
     }
@@ -393,7 +408,8 @@ public class RemoteInterpreter extends Interpreter {
       return completion;
     } catch (TException e) {
       broken = true;
-      throw new InterpreterException(e);
+      logInterpreterProcessException(interpreterProcess, "completion");
+      throw new InterpreterException(REMOTE_INTP_ERR, e);
     } finally {
       interpreterProcess.releaseClient(client, broken);
     }
@@ -411,6 +427,23 @@ public class RemoteInterpreter extends Interpreter {
           noteId,
           interpreterProcess,
           maxConcurrency);
+    }
+  }
+
+  private void populateInterpreterMemory(InterpreterGroup group){
+    String sparkDriverMemory = group.getProperty("spark.driver.memory");
+    if (sparkDriverMemory != null) {
+      sparkDriverMemory = sparkDriverMemory.toLowerCase().trim();
+      if (sparkDriverMemory.isEmpty()) {
+        return;
+      }
+      int memory = Integer.parseInt(sparkDriverMemory);
+      if (memory < 0 ){
+        memory = 0;
+      }
+      //Add 1 G for remote interpreter
+      sparkDriverMemory = "-Xmx" + String.valueOf(memory + 1) + "g" + " -XX:MaxPermSize=512m";
+      env.put("ZEPPELIN_INTP_MEM", sparkDriverMemory);
     }
   }
 
@@ -461,5 +494,13 @@ public class RemoteInterpreter extends Interpreter {
       Gson gson = new Gson();
       client.angularRegistryPush(gson.toJson(registry, registryType));
     }
+  }
+  
+  private void logInterpreterProcessException(RemoteInterpreterProcess interpreterProcess, 
+      String calle){
+    logger.info("Run interpreter process running on port: " + 
+        String.valueOf(interpreterProcess.getPort()) + " raised exception in " + 
+        calle + ". " +
+        "is process running?: " + interpreterProcess.isRunning());
   }
 }

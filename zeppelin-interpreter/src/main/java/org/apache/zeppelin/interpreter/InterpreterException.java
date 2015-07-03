@@ -23,6 +23,10 @@ package org.apache.zeppelin.interpreter;
  */
 public class InterpreterException extends RuntimeException {
 
+  public InterpreterException(String m, Throwable e) {
+    super(m, e);
+  }
+
   public InterpreterException(Throwable e) {
     super(e);
   }

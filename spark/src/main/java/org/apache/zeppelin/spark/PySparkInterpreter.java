@@ -88,6 +88,16 @@ public class PySparkInterpreter extends Interpreter implements ExecuteResultHand
     }
   }
 
+  private String getSparkHome() {
+    String sparkHome = getProperty("spark.home");
+    if (sparkHome == null) {
+      return new String("/usr/lib/spark/");
+    } else {
+      return sparkHome;
+    }
+  }
+
+
   private void createPythonScript() {
     ClassLoader classLoader = getClass().getClassLoader();
     File out = new File(scriptPath);

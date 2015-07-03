@@ -267,7 +267,10 @@ public class RemoteInterpreterServer
 
     InterpreterResult result;
     if (job.getStatus() == Status.ERROR) {
-      result = new InterpreterResult(Code.ERROR, Job.getStack(job.getException()));
+      //result = new InterpreterResult(Code.ERROR, Job.getStack(job.getException()));
+      return convert((InterpreterResult) job.getReturn(),
+          context.getConfig(),
+          context.getGui());
     } else {
       result = (InterpreterResult) job.getReturn();
 
@@ -516,8 +519,6 @@ public class RemoteInterpreterServer
     }
     return "Unknown";
   }
-
-
 
   @Override
   public void onAdd(String interpreterGroupId, AngularObject object) {

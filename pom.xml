@@ -62,7 +62,7 @@
     <module>shell</module>
     <module>livy</module>
     <module>hbase</module>
-    <module>postgresql</module>
+    <!--module>postgresql</module>
     <module>jdbc</module>
     <module>file</module>
     <module>flink</module>
@@ -73,7 +73,7 @@
     <module>cassandra</module>
     <module>elasticsearch</module>
     <module>bigquery</module>
-    <module>alluxio</module>
+    <module>alluxio</module-->
     <module>zeppelin-web</module>
     <module>zeppelin-server</module>
     <module>zeppelin-distribution</module>

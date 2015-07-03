@@ -66,14 +66,6 @@ function addEachJarInDir(){
   fi
 }
 
-function addEachJarInDirRecursive(){
-  if [[ -d "${1}" ]]; then
-    for jar in $(find -L "${1}" -type f -name '*jar'); do
-      ZEPPELIN_CLASSPATH="$jar:$ZEPPELIN_CLASSPATH"
-    done
-  fi
-}
-
 function addEachJarInDirRecursiveForIntp(){
   if [[ -d "${1}" ]]; then
     for jar in $(find -L "${1}" -type f -name '*jar'); do
@@ -104,6 +96,21 @@ function getZeppelinVersion(){
     CLASSPATH+=":${ZEPPELIN_CLASSPATH}"
     $ZEPPELIN_RUNNER -cp $CLASSPATH $ZEPPELIN_COMMANDLINE_MAIN -v
     exit 0
+}
+
+function readSparkConf() {
+    SPARK_CONF_PATH="${1}"
+    echo "Reading ${SPARK_CONF_PATH}"
+    while read line; do
+        echo "${line}" | grep -e "^spark[.]" > /dev/null
+        if [ $? -ne 0 ]; then
+            # skip the line not started with 'spark.'
+            continue;
+        fi
+        SPARK_CONF_KEY=`echo "${line}" | sed -e 's/\(^spark[^ ]*\)[ \t]*\(.*\)/\1/g'`
+        SPARK_CONF_VALUE=`echo "${line}" | sed -e 's/\(^spark[^ ]*\)[ \t]*\(.*\)/\2/g'`
+        export CONF_JAVA_OPTS+=" -D${SPARK_CONF_KEY}=${SPARK_CONF_VALUE}"        
+    done < ${SPARK_CONF_PATH}
 }
 
 # Text encoding for 

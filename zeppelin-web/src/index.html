@@ -50,8 +50,10 @@ limitations under the License.
     <link rel="stylesheet" href="bower_components/jquery-ui/themes/base/all.css" />
     <!-- endbuild -->
     <!-- build:css(.tmp) styles/main.css -->
+    <link href='https://fonts.googleapis.com/css?family=RobotoDraft:400,500,700,400italic' rel='stylesheet' type='text/css'>
     <link rel="stylesheet" href="app/home/home.css">
     <link rel="stylesheet" href="app/search/search.css">
+    <link rel="stylesheet" href="app/home/home-qubole.css">
     <link rel="stylesheet" href="app/notebook/notebook.css">
     <link rel="stylesheet" href="app/notebook/paragraph/paragraph.css">
     <link rel="stylesheet" href="app/interpreter/interpreter.css">
@@ -77,6 +79,10 @@ limitations under the License.
     <div id="main" class="container">
       <div ng-view></div>
     </div>
+
+    <!-- Qubole customization Add -->
+    <div class="powerby" style="text-align: right; margin-right: 10px;"> Powered by <a href="http://zeppelin-project.org/" target="_blank">Zeppelin</a> </div>
+
     <!-- Modal ::  Keyboard shortcuts -->
     <div ng-include src="'components/modal-shortcut/modal-shortcut.html'"></div>
     <div ng-controller="NotenameCtrl as notenamectrl">
