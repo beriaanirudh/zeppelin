@@ -52,6 +52,7 @@ import org.apache.spark.scheduler.DAGScheduler;
 import org.apache.spark.scheduler.Pool;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.ui.jobs.JobProgressListener;
+import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.zeppelin.interpreter.Interpreter;
 import org.apache.zeppelin.interpreter.InterpreterContext;
 import org.apache.zeppelin.interpreter.InterpreterException;
@@ -123,6 +124,7 @@ public class SparkInterpreter extends Interpreter {
   private SparkVersion sparkVersion;
   private static File outputDir;          // class outputdir for scala 2.11
   private Object classServer;      // classserver for scala 2.11
+  private SessionState sstate;
 
 
   public SparkInterpreter(Properties property) {
@@ -135,6 +137,7 @@ public class SparkInterpreter extends Interpreter {
 
     this.sc = sc;
     env = SparkEnv.get();
+    sstate = SessionState.get();
     sparkListener = setupListeners(this.sc);
   }
 
@@ -143,6 +146,7 @@ public class SparkInterpreter extends Interpreter {
       if (sc == null) {
         sc = createSparkContext();
         env = SparkEnv.get();
+        sstate = SessionState.get();
         sparkListener = setupListeners(sc);
       }
       return sc;
@@ -255,6 +259,7 @@ public class SparkInterpreter extends Interpreter {
           hc = getClass().getClassLoader().loadClass(name)
               .getConstructor(SparkContext.class);
           sqlc = (SQLContext) hc.newInstance(getSparkContext());
+          sstate = SessionState.get();
         } catch (NoSuchMethodException | SecurityException
             | ClassNotFoundException | InstantiationException
             | IllegalAccessException | IllegalArgumentException
@@ -268,6 +273,11 @@ public class SparkInterpreter extends Interpreter {
         sqlc = new SQLContext(getSparkContext());
       }
     }
+
+    if (sstate != null) {
+      SessionState.setCurrentSessionState(sstate);
+    }
+
     return sqlc;
   }
 
@@ -1141,6 +1151,9 @@ public class SparkInterpreter extends Interpreter {
 
   public InterpreterResult interpretInput(String[] lines, InterpreterContext context) {
     SparkEnv.set(env);
+    if (sstate != null) {
+      SessionState.setCurrentSessionState(sstate);
+    }
 
     // add print("") to make sure not finishing with comment
     // see https://github.com/NFLabs/zeppelin/issues/151
