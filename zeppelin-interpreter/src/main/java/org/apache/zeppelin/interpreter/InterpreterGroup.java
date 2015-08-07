@@ -27,6 +27,7 @@ import org.apache.zeppelin.interpreter.thrift.RemoteInterpreterService;
 import org.apache.zeppelin.resource.ResourcePool;
 import org.apache.zeppelin.scheduler.Scheduler;
 import org.apache.zeppelin.scheduler.SchedulerFactory;
+import org.apache.zeppelin.interpreter.Interpreter.RegisteredInterpreter;
 
 /**
  * InterpreterGroup is list of interpreters in the same interpreter group.
@@ -266,5 +267,31 @@ public class InterpreterGroup extends ConcurrentHashMap<String, List<Interpreter
 
   public String getProperty(String key){
     return getProperty().getProperty(key);
+  }
+
+  public void bringDefaultToFront() {
+    String defaultInterpreterName = getProperty("zeppelin.default.interpreter");
+    Logger logger = Logger.getLogger(InterpreterGroup.class);
+    logger.info("Default interpreter name is " + defaultInterpreterName);
+    if (defaultInterpreterName != null && defaultInterpreterName.trim().length() > 0) {
+      Interpreter defaultInterpreter = null;
+      for (String key: this.keySet()) {
+        List<Interpreter> intps = this.get(key);
+        for (Interpreter intp : intps) {
+          RegisteredInterpreter regIntp = Interpreter
+              .findRegisteredInterpreterByClassName(intp.getClassName());
+          if (regIntp.getName().equals(defaultInterpreterName)) {
+            defaultInterpreter = intp;
+            break;
+          }
+        }
+        //if there is a default interpreter, remove it and insert it at the head
+        if (defaultInterpreter != null && defaultInterpreter != intps.get(0)) {
+          logger.info("Default interpreter found. Moving to front of list");
+          remove(defaultInterpreter);
+          intps.add(0, defaultInterpreter);
+        }
+      }
+    }
   }
 }

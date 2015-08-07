@@ -632,6 +632,7 @@ public class InterpreterFactory implements InterpreterGroupFactory {
         }
       }
     }
+    interpreterGroup.bringDefaultToFront();
   }
 
 
