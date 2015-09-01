@@ -21,6 +21,8 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.zeppelin.util.QuboleUtil;
+
 /**
  * Generate Tiny ID.
  */
@@ -66,6 +68,6 @@ public class IdHashes {
     for (int i = result.size() - 1; i >= 0; i--) {
       sb.append(result.get(i));
     }
-    return sb.toString();
+    return sb.toString() + QuboleUtil.getClusterId() + System.currentTimeMillis();
   }
 }

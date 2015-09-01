@@ -156,14 +156,13 @@ function check_if_process_is_alive() {
   fi
 }
 
-function upstart() {
-
-  # upstart() allows zeppelin to be run and managed as a service
-  # for example, this could be called from an upstart script in /etc/init
-  # where the service manager starts and stops the process
-  initialize_default_directories
-
-  $ZEPPELIN_RUNNER $JAVA_OPTS -cp $ZEPPELIN_CLASSPATH_OVERRIDES:$CLASSPATH $ZEPPELIN_MAIN >> "${ZEPPELIN_OUTFILE}"
+function initqubole() {
+  source /usr/lib/hustler/bin/qubole-bash-lib.sh
+  export QUBOLE_API_TOKEN=`nodeinfo qubole_cluster_api_token`
+  export QUBOLE_BASE_URL=`nodeinfo qubole_base_url`
+  export S3_FIRST_CLASS_NOTEBOOK_LOC=`nodeinfo s3_first_class_notebook_location`
+  export CLUSTER_ID=`nodeinfo cluster_id`
+  echo "QUBOLE_BASE_URL is: ${QUBOLE_BASE_URL}, S3_FIRST_CLASS_NOTEBOOK_LOC=${S3_FIRST_CLASS_NOTEBOOK_LOC}"
 }
 
 function start() {
@@ -178,6 +177,7 @@ function start() {
   fi
 
   initialize_default_directories
+  initqubole
 
   nohup nice -n $ZEPPELIN_NICENESS $ZEPPELIN_RUNNER $JAVA_OPTS -cp $ZEPPELIN_CLASSPATH_OVERRIDES:$CLASSPATH $ZEPPELIN_MAIN >> "${ZEPPELIN_OUTFILE}" 2>&1 < /dev/null &
   pid=$!

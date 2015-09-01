@@ -34,7 +34,12 @@ import org.apache.zeppelin.socket.NotebookServer;
 import org.apache.zeppelin.user.Credentials;
 import org.apache.zeppelin.utils.SecurityUtils;
 import org.eclipse.jetty.http.HttpVersion;
+import org.eclipse.jetty.server.AbstractConnector;
+import org.apache.zeppelin.util.QuboleUtil;
 import org.eclipse.jetty.server.*;
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.servlet.DefaultServlet;
@@ -87,6 +92,18 @@ public class ZeppelinServer extends Application {
     notebook = new Notebook(conf,
         notebookRepo, schedulerFactory, replFactory, notebookWsServer,
             notebookIndex, notebookAuthorization, credentials);
+    int retries = 4;
+    while(retries > 0){
+      try {
+        // synchronous call to populate the notes
+        QuboleUtil.initNoteBook();
+        notebook.loadAllNotes();
+        break;
+      } catch (Exception e) {
+        LOG.info("Exception occured" + e.getMessage());
+        retries--;
+      }
+    }
   }
 
   public static void main(String[] args) throws InterruptedException {

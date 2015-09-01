@@ -182,13 +182,19 @@ public class ZeppelinConfiguration extends XMLConfiguration {
   }
 
   public String getString(String envName, String propertyName, String defaultValue) {
+    LOG.info("FCN0 ENVNAME: " + envName + " propertyName: " + propertyName + 
+        " default: " + defaultValue);
     if (System.getenv(envName) != null) {
+      LOG.info("FCN1 RETURNING: " +  System.getenv(envName) + " for :" + propertyName);
       return System.getenv(envName);
     }
     if (System.getProperty(propertyName) != null) {
+      LOG.info("FCN2 RETURNING: " + System.getProperty(propertyName)  + " for :" + 
+          propertyName);
       return System.getProperty(propertyName);
     }
-
+    LOG.info("FCN3 RETURNING: " + getStringValue(propertyName, defaultValue)  +
+        " for :" + propertyName);
     return getStringValue(propertyName, defaultValue);
   }
 

@@ -45,6 +45,7 @@ import org.apache.zeppelin.scheduler.SchedulerFactory;
 import org.apache.zeppelin.search.SearchService;
 import org.apache.zeppelin.user.AuthenticationInfo;
 import org.apache.zeppelin.user.Credentials;
+import org.apache.zeppelin.util.QuboleUtil;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.CronTrigger;
 import org.quartz.JobBuilder;
@@ -739,4 +740,8 @@ public class Notebook {
     this.notebookIndex.close();
   }
 
+  public Note fetchAndLoadNoteFromS3(String noteId) throws IOException {
+    QuboleUtil.fetchFromS3(noteId);
+    return loadNoteFromRepo(noteId, null);
+  }
 }

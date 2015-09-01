@@ -49,6 +49,7 @@ import org.apache.zeppelin.socket.NotebookServer;
 import org.apache.zeppelin.user.AuthenticationInfo;
 import org.apache.zeppelin.utils.SecurityUtils;
 import org.quartz.CronExpression;
+import org.apache.zeppelin.server.ZeppelinServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -783,4 +784,21 @@ public class NotebookRestApi {
     return new JsonResponse<>(Status.OK, notebooksFound).build();
   }
 
+  
+  /**
+   * Associate note with this cluster
+   * @throws IOException
+   */
+  @PUT
+  @Path("note/associate/{noteId}")
+  public Response associateNote(@PathParam("noteId") String noteId, String req)
+      throws IOException {
+    Note note = notebook.getNote(noteId);
+    if (note == null){
+      note = notebook.fetchAndLoadNoteFromS3(noteId);
+      ZeppelinServer.notebookWsServer.refresh(note);
+      LOG.info("Succesfully processed associate request for note " + noteId);
+    }
+    return new JsonResponse(Status.OK).build();
+  }
 }

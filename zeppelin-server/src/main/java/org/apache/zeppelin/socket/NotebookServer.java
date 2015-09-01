@@ -53,6 +53,7 @@ import org.apache.zeppelin.ticket.TicketContainer;
 import org.apache.zeppelin.utils.SecurityUtils;
 import org.eclipse.jetty.websocket.servlet.WebSocketServlet;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
+import org.apache.zeppelin.util.QuboleUtil;
 import org.quartz.SchedulerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -514,6 +515,7 @@ public class NotebookServer extends WebSocketServlet implements
       broadcastNote(note);
       broadcastNoteList(subject);
     }
+    QuboleUtil.updateNoteNameChangeInRails(note);
   }
 
   private boolean isCronUpdated(Map<String, Object> configA,
@@ -548,6 +550,7 @@ public class NotebookServer extends WebSocketServlet implements
     addConnectionToNote(note.id(), (NotebookSocket) conn);
     conn.send(serializeMessage(new Message(OP.NEW_NOTE).put("note", note)));
     broadcastNoteList(subject);
+    QuboleUtil.updateNewNoteInRails(note);
   }
 
   private void removeNote(NotebookSocket conn, HashSet<String> userAndRoles,
@@ -570,6 +573,7 @@ public class NotebookServer extends WebSocketServlet implements
     notebook.removeNote(noteId, subject);
     removeNote(noteId);
     broadcastNoteList(subject);
+    QuboleUtil.updateNoteDeletionInRails(noteId);
   }
 
   private void updateParagraph(NotebookSocket conn, HashSet<String> userAndRoles,
@@ -1274,6 +1278,11 @@ public class NotebookServer extends WebSocketServlet implements
         }
       }
     }
+  }
+  
+  public void refresh(Note note) {
+    broadcastNote(note);
+    broadcastNoteList(null);
   }
 }
 
