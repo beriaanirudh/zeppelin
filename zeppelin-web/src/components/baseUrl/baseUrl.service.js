@@ -43,4 +43,12 @@ angular.module('zeppelinWebApp').service('baseUrlSrv', function() {
     return path.replace(/\/$/, '');
   };
 
+  this.getWSPort = function() {
+    if (location.protocol === 'https:') {
+      return 8084;
+    } else {
+      return 8083; 
+    }
+  };
+
 });
