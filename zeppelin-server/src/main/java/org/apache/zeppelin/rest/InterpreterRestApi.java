@@ -31,7 +31,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-
+import com.google.gson.JsonSyntaxException;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.zeppelin.annotation.ZeppelinApi;
 import org.apache.zeppelin.dep.Repository;
@@ -119,7 +119,23 @@ public class InterpreterRestApi {
           Status.INTERNAL_SERVER_ERROR,
           e.getMessage(),
           ExceptionUtils.getStackTrace(e)).build();
+    } catch (Exception e) {
+      return new JsonResponse(Status.INTERNAL_SERVER_ERROR, "Something bad happened",
+          ExceptionUtils.getStackTrace(e)).build();
     }
+  }
+
+  /**
+   * List particular interpreter setting
+   */
+  @GET
+  @Path("setting/{settingId}")
+  public Response listSetting(@PathParam("settingId") String settingId) {
+    InterpreterSetting setting = interpreterFactory.get(settingId);
+    if (setting == null) {
+      return new JsonResponse(Status.NOT_FOUND, "", settingId).build();
+    }
+    return new JsonResponse(Status.OK, "", setting).build();
   }
 
   @PUT

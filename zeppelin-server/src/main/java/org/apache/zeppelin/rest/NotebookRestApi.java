@@ -33,6 +33,10 @@ import javax.ws.rs.core.Response.Status;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.zeppelin.annotation.ZeppelinApi;
+import javax.ws.rs.*;
+
+import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.zeppelin.interpreter.InterpreterResult;
 import org.apache.zeppelin.interpreter.InterpreterSetting;
 import org.apache.zeppelin.notebook.Note;
 import org.apache.zeppelin.notebook.Notebook;
@@ -44,6 +48,8 @@ import org.apache.zeppelin.rest.message.NewNotebookRequest;
 import org.apache.zeppelin.rest.message.NewParagraphRequest;
 import org.apache.zeppelin.rest.message.RunParagraphWithParametersRequest;
 import org.apache.zeppelin.search.SearchService;
+import org.apache.zeppelin.rest.message.NewParagraphRunRequest;
+import org.apache.zeppelin.scheduler.Job;
 import org.apache.zeppelin.server.JsonResponse;
 import org.apache.zeppelin.socket.NotebookServer;
 import org.apache.zeppelin.user.AuthenticationInfo;
@@ -790,7 +796,84 @@ public class NotebookRestApi {
     return new JsonResponse<>(Status.OK, notebooksFound).build();
   }
 
-  
+  @GET
+  @Path("note/{noteId}")
+  public Response getNote(@PathParam("noteId") String noteId) {
+    if (noteId == null || noteId.trim().length() == 0) {
+      return new JsonResponse(Status.NOT_FOUND, "", noteId).build();
+    }
+    Note note = notebook.getNote(noteId);
+    if (note == null) {
+      return new JsonResponse(Status.NOT_FOUND, "", noteId).build();
+    }
+    return new JsonResponse(Status.OK, "", note).build();
+  }
+
+  @POST
+  @Path("note/{noteId}/paragraph")
+  public Response createAndRunParagraph(@PathParam("noteId") String noteId,
+                                        String message) {
+    NewParagraphRunRequest request = gson.fromJson(message, NewParagraphRunRequest.class);
+    if (request == null) {
+      return new JsonResponse(
+          Status.BAD_REQUEST, "Request should contain body with paragraph text.").build();
+    }
+    String text = request.getParagraph();
+    if (text == null || text.isEmpty()) {
+      return new JsonResponse(Status.BAD_REQUEST, "Paragraph text should not be empty").build();
+    }
+    Note note = notebook.getNote(noteId);
+    if (note == null) {
+      return new JsonResponse(Status.NOT_FOUND, "Note not found:", noteId).build();
+    }
+    Paragraph p = note.addParagraph();
+    p.setText(text);
+    p.setTitle(request.getTitle());
+    p.setConfig(request.getConfig());
+    p.settings.setParams(request.getParams());
+
+    try {
+      LOG.info("Running paragraph: " + p.getId());
+      note.run(p.getId());
+    } catch (Exception ex) {
+      LOG.error("Exception from run", ex);
+      if (p != null) {
+        p.setReturn(new InterpreterResult(InterpreterResult.Code.ERROR, ex.getMessage()), ex);
+        p.setStatus(Job.Status.ERROR);
+        return new JsonResponse(
+            Status.INTERNAL_SERVER_ERROR,
+            ex.getMessage(),
+            ExceptionUtils.getStackTrace(ex)).build();
+      }
+    }
+    return new JsonResponse(Status.CREATED, "", p).build();
+  }
+
+  @PUT
+  @Path("note/{noteId}/paragraph/{paragraphId}/kill")
+  public Response cancelParagraph(@PathParam("noteId") String noteId,
+                                  @PathParam("paragraphId") String paragraphId) {
+    Note note = notebook.getNote(noteId);
+    if (note == null) {
+      return new JsonResponse(Status.NOT_FOUND, "Note not found:", noteId).build();
+    }
+    Paragraph paragraph = note.getParagraph(paragraphId);
+    if (paragraph == null) {
+      return new JsonResponse(Status.NOT_FOUND, "Paragraph not found:", paragraphId).build();
+    }
+    try {
+      LOG.info("Trying to abort paragraph: " + paragraphId);
+      paragraph.abort();
+      return new JsonResponse(Status.OK, "Paragraph aborted successfully.", paragraphId).build();
+    } catch (Exception ex) {
+      LOG.error("Exception while aborting paragraph: " + paragraphId, ex);
+      return new JsonResponse(
+          Status.INTERNAL_SERVER_ERROR,
+          "Exception while aborting paragraph.",
+          ex.getMessage()).build();
+    }
+  }
+
   /**
    * Associate note with this cluster
    * @throws IOException
@@ -820,7 +903,7 @@ public class NotebookRestApi {
       @QueryParam("sourceNoteId") String sourceNoteId,
       @QueryParam("source") String source,
       @QueryParam("interpreterIds") List<String> interpreterIds)
-          throws IOException, CloneNotSupportedException {
+      throws IOException {
     // Create the JSON Object
     JsonObject propObj = new JsonObject();
 
