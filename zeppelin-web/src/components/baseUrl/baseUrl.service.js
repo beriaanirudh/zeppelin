@@ -44,11 +44,14 @@ angular.module('zeppelinWebApp').service('baseUrlSrv', function() {
   };
 
   this.getWSPort = function() {
-    if (location.protocol === 'https:') {
-      return 8084;
-    } else {
-      return 8083; 
-    }
+    if(location.hostname.contains('qubole')){
+      if (location.protocol === 'https:') {
+        return 8084;
+      } else {
+        return 8083;
+      }
+     }
+     return this.getPort();
   };
 
 });
