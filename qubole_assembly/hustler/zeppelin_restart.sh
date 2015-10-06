@@ -17,26 +17,27 @@ function start_zeppelin_process() {
   fi
 }
 
-wget localhost:8082
+wget localhost:8082 -O /dev/null
 success=$?
 if [ "$success" != "0" ]; then
   zep_pid=`jps -m | grep ZeppelinServer  | cut -d" " -f 1`
+  zep_pgid=`ps  xao pid,pgid | grep ${zep_pid} | awk '{print $2}' `
   cluster_id=`nodeinfo cluster_id`
   #take jstack of bad zeppelin process. 
   #put them in /usr/lib/zeppelin/logs/zeppelin_restart.log for debugging and then restart
   echo "------------Date: `date -u`----------------" >> /usr/lib/zeppelin/logs/zeppelin_restart.log 2>&1
-  echo "zeppelin is not running fine. Zep pid is: ${zep_pid}. cluster id is: ${cluster_id}. Restarting" >> /usr/lib/zeppelin/logs/zeppelin_restart.log 2>&1
+  echo "zeppelin is not running fine. Zep pid is: ${zep_pid}. cluster id is: ${cluster_id}. pgid is: ${zep_pgid} Restarting" >> /usr/lib/zeppelin/logs/zeppelin_restart.log 2>&1
   echo "------------zeppelin jstack----------------" >> /usr/lib/zeppelin/logs/zeppelin_restart.log 2>&1
   if [ "$zep_pid" != "" ]; then
     jstack $zep_pid >> /usr/lib/zeppelin/logs/zeppelin_restart.log 2>&1 
-    kill -9 ${zep_pid} 
   fi  
   zep_cid=`jps -m | grep RemoteInterpreterServer | awk '{print $1}'`
+  zep_cid=`jps -m | grep "RemoteInterpreterServer\|SparkSubmit" | awk '{print $1}'`
   for i in $zep_cid
   do
     echo "------------Remote JVM ${i} jstack----------------" >> /usr/lib/zeppelin/logs/zeppelin_restart.log 2>&1
     jstack $i >> /usr/lib/zeppelin/logs/zeppelin_restart.log 2>&1 
-    kill -9 $i
   done
+  kill -9 -${zep_pgid}
   start_zeppelin_process
 fi
