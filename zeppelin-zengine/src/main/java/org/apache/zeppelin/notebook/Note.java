@@ -91,6 +91,7 @@ public class Note implements Serializable, JobListener {
    */
   private Map<String, Object> info = new HashMap<>();
 
+  private String source;
 
   public Note() {}
 
@@ -180,6 +181,14 @@ public class Note implements Serializable, JobListener {
   @SuppressWarnings("rawtypes")
   public Map<String, List<AngularObject>> getAngularObjects() {
     return angularObjects;
+  }
+
+  public String getSource() {
+    return source;
+  }
+
+  public void setSource(String source) {
+    this.source = source;
   }
 
   /**

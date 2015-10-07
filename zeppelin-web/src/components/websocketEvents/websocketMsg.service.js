@@ -22,7 +22,7 @@ angular.module('zeppelinWebApp').service('websocketMsgSrv', function($rootScope,
     },
 
     createNotebook: function(noteName) {
-      websocketEvents.sendNewEvent({op: 'NEW_NOTE',data: {name: noteName}});
+      websocketEvents.sendNewEvent({op: 'NEW_NOTE',data: {name: noteName, source: 'FCN' }});
     },
 
     deleteNotebook: function(noteId) {
@@ -30,7 +30,7 @@ angular.module('zeppelinWebApp').service('websocketMsgSrv', function($rootScope,
     },
 
     cloneNotebook: function(noteIdToClone, newNoteName ) {
-      websocketEvents.sendNewEvent({op: 'CLONE_NOTE', data: {id: noteIdToClone, name: newNoteName}});
+      websocketEvents.sendNewEvent({op: 'CLONE_NOTE', data: {id: noteIdToClone, name: newNoteName, source: 'FCN'}});
     },
 
     getNotebookList: function() {

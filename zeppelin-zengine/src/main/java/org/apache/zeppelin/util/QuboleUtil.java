@@ -42,13 +42,14 @@ public class QuboleUtil {
   /**
    * make opsapi call to qubole rails tier to convey creation of new note
    **/
-  public static void updateNewNoteInRails(Note note) {
+  public static void updateNewNoteInRails(Note note, String source) {
     if (FEATURE_DISABLED) {
       return;
     }
     Map<String, String> params = new HashMap<String, String>();
     params.put("name", note.getName());
     params.put("note_id", note.id());
+    params.put("source", source);
 
     String apiPath = opsApiPath;
     LOG.info("Making POST request to " + apiPath + " to add new note");
@@ -160,7 +161,7 @@ public class QuboleUtil {
     LOG.info("Making GET request to " + apiPath + " to update notebook");
 
     try {
-      HttpURLConnection connection = (HttpURLConnection) 
+      HttpURLConnection connection = (HttpURLConnection)
           (new URL(getQuboleBaseURL() + apiPath)).openConnection();
       connection.setRequestProperty("Content-Type", "application/json");
       connection.setRequestProperty("Accept", "application/json");
@@ -193,7 +194,7 @@ public class QuboleUtil {
       LOG.info(e.toString());
     }
   }
-  
+
   public static String getClusterId(){
     return clusterId;
   }

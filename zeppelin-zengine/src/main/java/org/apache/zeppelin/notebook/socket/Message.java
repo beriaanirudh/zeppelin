@@ -133,6 +133,8 @@ public class Message {
   }
 
   public Object get(String k) {
+    if (data == null )
+      return data;
     return data.get(k);
   }
 

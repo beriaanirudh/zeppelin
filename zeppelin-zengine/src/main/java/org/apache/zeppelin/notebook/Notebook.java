@@ -333,7 +333,7 @@ public class Notebook {
   }
 
   @SuppressWarnings("rawtypes")
-  private Note loadNoteFromRepo(String id, AuthenticationInfo subject) {
+  private Note loadNoteFromRepo(String id, AuthenticationInfo subject) throws IOException {
     Note note = null;
     try {
       note = notebookRepo.get(id, subject);
@@ -406,6 +406,10 @@ public class Notebook {
         }
       }
     }
+
+    //update source of note
+    //Handles associate and loading of old notes
+    updateSourceForNote(note);
     return note;
   }
 
@@ -416,6 +420,17 @@ public class Notebook {
       loadNoteFromRepo(info.getId(), null);
     }
   }
+
+  private void updateSourceForNote(Note note) throws IOException {
+    String source = note.getSource();
+    if (source == null) {
+      // old notes
+      note.setSource("FCN");
+      note.persist(null);
+      logger.info("Updates source for note:" + note.getId() + "to FCN");
+    }
+  }
+
 
   /**
    * Reload all notes from repository after clearing `notes`

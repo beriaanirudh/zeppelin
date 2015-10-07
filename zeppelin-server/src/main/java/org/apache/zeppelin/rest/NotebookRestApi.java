@@ -50,11 +50,17 @@ import org.apache.zeppelin.user.AuthenticationInfo;
 import org.apache.zeppelin.utils.SecurityUtils;
 import org.quartz.CronExpression;
 import org.apache.zeppelin.server.ZeppelinServer;
+import org.apache.zeppelin.socket.Message;
+import org.apache.zeppelin.util.QuboleUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
@@ -800,5 +806,63 @@ public class NotebookRestApi {
       LOG.info("Succesfully processed associate request for note " + noteId);
     }
     return new JsonResponse(Status.OK).build();
+  }
+
+  /**
+   * Create new  note
+   *
+   * @throws IOException
+   * @throws CloneNotSupportedException
+   */
+  @POST
+  @Path("note")
+  public Response createNote(String req) throws IOException, CloneNotSupportedException {
+    // Create the JSON Object
+    JsonObject propObj = (JsonObject) new JsonParser().parse(req);
+    JsonElement sourceNote = propObj.get("sourceNoteId");
+    String sourceNoteId = (sourceNote != JsonNull.INSTANCE) ? sourceNote.getAsString() : null;
+    propObj.addProperty("id", sourceNoteId);
+    boolean isClone = (sourceNoteId != null);
+
+    JsonObject dataObj = new JsonObject();
+    dataObj.add("data", propObj);
+
+    String message = dataObj.toString();
+    Message msg = gson.fromJson(message, Message.class);
+    Note newNote = null;
+    if (isClone) {
+      newNote = ZeppelinServer.notebookServer.cloneNote(null, notebook, msg);
+    } else {
+      newNote = ZeppelinServer.notebookServer.createNote(null, notebook, msg);
+    }
+    JsonResponse<String> jsonResponse = new JsonResponse<String>(Status.CREATED);
+
+    JsonObject obj = new JsonObject();
+    obj.addProperty("id", newNote.id());
+    jsonResponse.setBody(obj.toString());
+    return jsonResponse.build();
+  }
+
+  /**
+   *  update note
+   * @throws IOException
+   *
+   */
+  @PUT
+  @Path("note/{noteId}")
+  public Response updateNote(@PathParam("noteId") String noteId, String req) throws IOException {
+    // Create the JSON Object
+    JsonObject propObj = (JsonObject) new JsonParser().parse(req);
+    JsonElement jsonElement = propObj.get("name");
+    String name = jsonElement.getAsString();
+
+    Note note = notebook.getNote(noteId);
+    note.setName(name);
+    note.persist();
+    QuboleUtil.updateNoteNameChangeInRails(note);
+    ZeppelinServer.notebookServer.refresh(note);
+
+    JsonResponse<String> jsonResponse = new JsonResponse<String>(Status.OK);
+    return jsonResponse.build();
   }
 }
