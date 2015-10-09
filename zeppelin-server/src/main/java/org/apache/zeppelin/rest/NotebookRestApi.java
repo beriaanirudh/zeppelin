@@ -57,10 +57,11 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
@@ -809,38 +810,44 @@ public class NotebookRestApi {
   }
 
   /**
-   * Create new  note
+   * Create new note
    *
    * @throws IOException
    * @throws CloneNotSupportedException
    */
   @POST
   @Path("note")
-  public Response createNote(String req) throws IOException, CloneNotSupportedException {
+  public Response createNote(@QueryParam("name") String name,
+                             @QueryParam("sourceNoteId") String sourceNoteId,
+                             @QueryParam("source") String source,
+                             @QueryParam("interpreterIds") List<String> interpreterIds)
+      throws IOException, CloneNotSupportedException {
     // Create the JSON Object
-    JsonObject propObj = (JsonObject) new JsonParser().parse(req);
-    JsonElement sourceNote = propObj.get("sourceNoteId");
-    String sourceNoteId = (sourceNote != JsonNull.INSTANCE) ? sourceNote.getAsString() : null;
+    JsonObject propObj = new JsonObject();
+
     propObj.addProperty("id", sourceNoteId);
-    boolean isClone = (sourceNoteId != null);
+    propObj.addProperty("name", name);
+    propObj.addProperty("source", source);
+    JsonArray arr = new JsonArray();
+    for (String id : interpreterIds) {
+      arr.add(new JsonPrimitive(id));
+    }
+    propObj.add("interpretersettings", arr);
 
     JsonObject dataObj = new JsonObject();
     dataObj.add("data", propObj);
 
-    String message = dataObj.toString();
-    Message msg = gson.fromJson(message, Message.class);
-    Note newNote = null;
-    if (isClone) {
-      newNote = ZeppelinServer.notebookServer.cloneNote(null, notebook, msg);
-    } else {
+    Message msg = gson.fromJson(dataObj, Message.class);
+    Note newNote;
+    if (sourceNoteId == null || sourceNoteId.isEmpty()) {
       newNote = ZeppelinServer.notebookServer.createNote(null, notebook, msg);
+    } else {
+      newNote = ZeppelinServer.notebookServer.cloneNote(null, notebook, msg);
     }
-    JsonResponse<String> jsonResponse = new JsonResponse<String>(Status.CREATED);
 
-    JsonObject obj = new JsonObject();
-    obj.addProperty("id", newNote.id());
-    jsonResponse.setBody(obj.toString());
-    return jsonResponse.build();
+    Map<String, String> obj = new HashMap<>();
+    obj.put("id", newNote.id());
+    return new JsonResponse(Status.CREATED, null, obj).build();
   }
 
   /**
@@ -858,9 +865,9 @@ public class NotebookRestApi {
 
     Note note = notebook.getNote(noteId);
     note.setName(name);
-    note.persist();
+    note.persist(null);
     QuboleUtil.updateNoteNameChangeInRails(note);
-    ZeppelinServer.notebookServer.refresh(note);
+    ZeppelinServer.notebookWsServer.refresh(note);
 
     JsonResponse<String> jsonResponse = new JsonResponse<String>(Status.OK);
     return jsonResponse.build();

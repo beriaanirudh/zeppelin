@@ -550,7 +550,6 @@ public class NotebookServer extends WebSocketServlet implements
     addConnectionToNote(note.id(), (NotebookSocket) conn);
     conn.send(serializeMessage(new Message(OP.NEW_NOTE).put("note", note)));
     broadcastNoteList(subject);
-    QuboleUtil.updateNewNoteInRails(note);
   }
 
   private void removeNote(NotebookSocket conn, HashSet<String> userAndRoles,
