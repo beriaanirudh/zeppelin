@@ -81,34 +81,42 @@ public class QuboleUtil {
     sendRequestToQuboleRails(apiPath, params, "PUT");
   }
 
-  private static void sendRequestToQuboleRails(String apiPath, Map<String, String> params,
-      String requestMethod) {
-    try {
-      HttpURLConnection connection =
-          (HttpURLConnection) (new URL(getQuboleBaseURL() + apiPath)).openConnection();
-      connection.setRequestProperty("Content-Type", "application/json");
-      connection.setRequestProperty("Accept", "application/json");
-      connection.setRequestProperty("X-AUTH-TOKEN", getQuboleApiToken());
-      connection.setRequestMethod(requestMethod);
-      connection.setDoOutput(true);
-      if (params != null) {
-        Gson gson = new Gson();
-        String jsonData = gson.toJson(params);
-        OutputStreamWriter out = new OutputStreamWriter(connection.getOutputStream());
-        out.write(jsonData);
-        out.flush();
-        out.close();
+  private static HttpURLConnection sendRequestToQuboleRails(String apiPath,
+      Map<String, String> params, String requestMethod) {
+    int retries = 4;
+    while (retries > 0) {
+      try {
+        HttpURLConnection connection = (HttpURLConnection) (new URL(getQuboleBaseURL() + apiPath))
+            .openConnection();
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setRequestProperty("Accept", "application/json");
+        connection.setRequestProperty("X-AUTH-TOKEN", getQuboleApiToken());
+        connection.setRequestMethod(requestMethod);
+        connection.setDoOutput(true);
+        if (params != null) {
+          Gson gson = new Gson();
+          String jsonData = gson.toJson(params);
+          OutputStreamWriter out = new OutputStreamWriter(connection.getOutputStream());
+          out.write(jsonData);
+          out.flush();
+          out.close();
+        }
+        int responseCode = connection.getResponseCode();
+
+        if (responseCode == 200) {
+          LOG.info(requestMethod + " request to rails successful");
+          return connection;
+        } else {
+          LOG.info(responseCode + " error in making opsapi call to rails");
+          LOG.info("Waiting for 5 seconds");
+          Thread.sleep(5000);
+        }
+      } catch (IOException  | InterruptedException e) {
+        LOG.info(e.toString());
       }
-      int responseCode = connection.getResponseCode();
-      connection.getRequestProperty("notes");
-      if (responseCode == 200) {
-        LOG.info(requestMethod + " request to rails successful");
-      } else {
-        LOG.info(responseCode + " error in making opsapi call to rails");
-      }
-    } catch (IOException e) {
-      LOG.info(e.toString());
+      retries--;
     }
+    return null;
   }
 
   private static String getQuboleApiToken() {
@@ -161,15 +169,8 @@ public class QuboleUtil {
     LOG.info("Making GET request to " + apiPath + " to update notebook");
 
     try {
-      HttpURLConnection connection = (HttpURLConnection)
-          (new URL(getQuboleBaseURL() + apiPath)).openConnection();
-      connection.setRequestProperty("Content-Type", "application/json");
-      connection.setRequestProperty("Accept", "application/json");
-      connection.setRequestProperty("X-AUTH-TOKEN", getQuboleApiToken());
-      connection.setRequestMethod("GET");
-      connection.setDoOutput(true);
+      HttpURLConnection connection = sendRequestToQuboleRails(apiPath, null, "GET");
       int responseCode = connection.getResponseCode();
-      connection.getRequestProperty("notes");
       if (responseCode == 200) {
         InputStream inputStream = connection.getInputStream();
         BufferedReader bis = new BufferedReader(new InputStreamReader(inputStream));

@@ -92,18 +92,13 @@ public class ZeppelinServer extends Application {
     notebook = new Notebook(conf,
         notebookRepo, schedulerFactory, replFactory, notebookWsServer,
             notebookIndex, notebookAuthorization, credentials);
-    int retries = 4;
-    while(retries > 0){
-      try {
-        // synchronous call to populate the notes
-        QuboleUtil.initNoteBook();
-        notebook.loadAllNotes();
-        break;
-      } catch (Exception e) {
-        LOG.info("Exception occured" + e.getMessage());
-        retries--;
-      }
+    try {
+      // synchronous call to populate the notes
+      QuboleUtil.initNoteBook();
+    } catch (Exception e) {
+      LOG.info("Exception occured" + e.getMessage());
     }
+    notebook.loadAllNotes();
   }
 
   public static void main(String[] args) throws InterruptedException {
