@@ -358,6 +358,10 @@ public class Notebook {
     note.setNotebookRepo(notebookRepo);
 
     Map<String, SnapshotAngularObject> angularObjectSnapshot = new HashMap<>();
+    if (note.getParagraphs().isEmpty()){
+      note.addParagraph();
+      note.persist(null);
+    }
 
     // restore angular object --------------
     Date lastUpdatedDate = new Date(0);
