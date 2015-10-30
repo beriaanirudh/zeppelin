@@ -157,12 +157,19 @@ function check_if_process_is_alive() {
 }
 
 function initqubole() {
-  source /usr/lib/hustler/bin/qubole-bash-lib.sh
+  source /media/ephemeral0/logs/cloud_provider.sh
+  if [[ $cloud_provider == "gce" ]]; then
+    source /usr/lib/cloudman/cloudman/udf/toppings/hadoop_node_init_ext.sh
+    export FIRST_CLASS_NOTEBOOK_LOC=`nodeinfo gs_first_class_notebook_location`
+  else
+    source /usr/lib/hustler/bin/qubole-bash-lib.sh
+    export FIRST_CLASS_NOTEBOOK_LOC=`nodeinfo s3_first_class_notebook_location`
+  fi
+
   export QUBOLE_API_TOKEN=`nodeinfo qubole_cluster_api_token`
   export QUBOLE_BASE_URL=`nodeinfo qubole_base_url`
-  export S3_FIRST_CLASS_NOTEBOOK_LOC=`nodeinfo s3_first_class_notebook_location`
   export CLUSTER_ID=`nodeinfo cluster_id`
-  echo "QUBOLE_BASE_URL is: ${QUBOLE_BASE_URL}, S3_FIRST_CLASS_NOTEBOOK_LOC=${S3_FIRST_CLASS_NOTEBOOK_LOC}"
+  echo "QUBOLE_BASE_URL is: ${QUBOLE_BASE_URL}, FIRST_CLASS_NOTEBOOK_LOC=${FIRST_CLASS_NOTEBOOK_LOC}"
 }
 
 function start() {

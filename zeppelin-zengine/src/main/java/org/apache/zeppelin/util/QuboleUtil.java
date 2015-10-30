@@ -36,7 +36,7 @@ public class QuboleUtil {
   private static final String quboleApiToken = System.getenv("QUBOLE_API_TOKEN");
   private static boolean FEATURE_DISABLED = false; // expose this as env
                                                    // variable??
-  private static final String S3Loc = System.getenv("S3_FIRST_CLASS_NOTEBOOK_LOC");
+  private static final String S3Loc = System.getenv("FIRST_CLASS_NOTEBOOK_LOC");
   private static final String opsApiPath = "/opsapi/v1/zeppelin";
   private static final String s3cmd = "/usr/bin/s3cmd -c /usr/lib/hustler/s3cfg";
   private static final String clusterId = System.getenv("CLUSTER_ID");

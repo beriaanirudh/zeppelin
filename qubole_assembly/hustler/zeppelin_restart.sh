@@ -1,5 +1,12 @@
 #!/bin/bash -x
-source /usr/lib/hustler/bin/qubole-bash-lib.sh
+
+source /media/ephemeral0/logs/cloud_provider.sh
+if [[ $cloud_provider == "gce" ]]; then
+  source /usr/lib/cloudman/cloudman/udf/toppings/hadoop_node_init_ext.sh
+else
+  source /usr/lib/hustler/bin/qubole-bash-lib.sh
+fi
+
 is_master=`nodeinfo is_master`
 if [[ "$is_master" != "1" ]]; then
   return
