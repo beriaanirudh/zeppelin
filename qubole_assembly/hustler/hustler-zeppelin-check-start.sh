@@ -5,7 +5,7 @@ if [[ "$is_master" != "1" ]]; then
   return
 fi
 
-if [[ $use_spark != "1" && $do_hbase != "1" ]]; then
+if [[ $use_spark != "1" && $do_hbase != "1" && $do_presto != "1" ]]; then
   return
 fi
 

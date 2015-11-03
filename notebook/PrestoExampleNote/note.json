@@ -1,0 +1,242 @@
+{
+  "paragraphs": [
+    {
+      "text": "%md ###This notebook supports multiple language backend\n- default: SQL on Presto\n- %md: markdown\n- %sh: shell \n- %presto: default, SQL on Presto\n\nInterpreters are loaded lazily and hence takes some time the first time.\nNote uses a websocket for communication. So changes propagate to all open instnces of this notebook instantaneously",
+      "config": {
+        "colWidth": 12.0,
+        "graph": {
+          "mode": "table",
+          "height": 300.0,
+          "optionOpen": false,
+          "keys": [],
+          "values": [],
+          "groups": [],
+          "scatter": {}
+        }
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "jobName": "paragraph_1443100995300_-1422426806",
+      "id": "20150924-132315_1798492170",
+      "result": {
+        "code": "SUCCESS",
+        "type": "HTML",
+        "msg": "\u003ch3\u003eThis notebook supports multiple language backend\u003c/h3\u003e\n\u003cul\u003e\n\u003cli\u003edefault: SQL on Presto\u003c/li\u003e\n\u003cli\u003e%md: markdown\u003c/li\u003e\n\u003cli\u003e%sh: shell\u003c/li\u003e\n\u003cli\u003e%presto: default, SQL on Presto\u003c/li\u003e\n\u003c/ul\u003e\n\u003cp\u003eInterpreters are loaded lazily and hence takes some time the first time.\n\u003cbr  /\u003eNote uses a websocket for communication. So changes propagate to all open instnces of this notebook instantaneously\u003c/p\u003e\n"
+      },
+      "dateCreated": "Sep 24, 2015 1:23:15 PM",
+      "dateStarted": "Sep 25, 2015 10:48:14 AM",
+      "dateFinished": "Sep 25, 2015 10:48:15 AM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%md ### sql example\n- All hive tables are visible to Presto and can be queried from the Notebooks",
+      "config": {
+        "colWidth": 12.0,
+        "graph": {
+          "mode": "table",
+          "height": 300.0,
+          "optionOpen": false,
+          "keys": [],
+          "values": [],
+          "groups": [],
+          "scatter": {}
+        }
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "jobName": "paragraph_1443178094300_459294222",
+      "id": "20150925-104814_7043295",
+      "result": {
+        "code": "SUCCESS",
+        "type": "HTML",
+        "msg": "\u003ch3\u003esql example\u003c/h3\u003e\n\u003cul\u003e\n\u003cli\u003eAll hive tables are visible to Presto and can be queried from the Notebooks\u003c/li\u003e\n\u003c/ul\u003e\n"
+      },
+      "dateCreated": "Sep 25, 2015 10:48:14 AM",
+      "dateStarted": "Sep 25, 2015 10:49:43 AM",
+      "dateFinished": "Sep 25, 2015 10:49:43 AM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "show tables in tpcds_orc_100",
+      "config": {
+        "colWidth": 12.0,
+        "graph": {
+          "mode": "table",
+          "height": 300.0,
+          "optionOpen": false,
+          "keys": [
+            {
+              "name": "Table",
+              "index": 0.0,
+              "aggr": "sum"
+            }
+          ],
+          "values": [],
+          "groups": [],
+          "scatter": {
+            "xAxis": {
+              "name": "Table",
+              "index": 0.0,
+              "aggr": "sum"
+            }
+          }
+        }
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "jobName": "paragraph_1443178183092_-256400028",
+      "id": "20150925-104943_1385147203",
+      "result": {
+        "code": "SUCCESS",
+        "type": "TABLE",
+        "msg": "Table\ncustomer\t\ncustomer_address\t\ncustomer_demographics\t\ndate_dim\t\nhousehold_demographics\t\nitem\t\npromotion\t\nstore\t\nstore_sales\t\ntime_dim\t\n"
+      },
+      "dateCreated": "Sep 25, 2015 10:49:43 AM",
+      "dateStarted": "Sep 25, 2015 10:50:07 AM",
+      "dateFinished": "Sep 25, 2015 10:50:14 AM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "select c_birth_month, count(*) from customer_1000_orc where c_birth_month is not null group by c_birth_month order by c_birth_month",
+      "config": {
+        "colWidth": 12.0,
+        "graph": {
+          "mode": "multiBarChart",
+          "height": 300.0,
+          "optionOpen": false,
+          "keys": [
+            {
+              "name": "c_birth_month",
+              "index": 0.0,
+              "aggr": "sum"
+            }
+          ],
+          "values": [
+            {
+              "name": "_col1",
+              "index": 1.0,
+              "aggr": "sum"
+            }
+          ],
+          "groups": [],
+          "scatter": {
+            "xAxis": {
+              "name": "c_birth_month",
+              "index": 0.0,
+              "aggr": "sum"
+            },
+            "yAxis": {
+              "name": "_col1",
+              "index": 1.0,
+              "aggr": "sum"
+            }
+          }
+        }
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "jobName": "paragraph_1443100929269_-664764276",
+      "id": "20150924-132209_239736928",
+      "result": {
+        "code": "SUCCESS",
+        "type": "TABLE",
+        "msg": "c_birth_month\t_col1\n1\t983456\t\n2\t895339\t\n3\t982295\t\n4\t949671\t\n5\t983199\t\n6\t950841\t\n7\t983157\t\n8\t982693\t\n9\t951644\t\n10\t982417\t\n11\t952765\t\n12\t982894\t\n"
+      },
+      "dateCreated": "Sep 24, 2015 1:22:09 PM",
+      "dateStarted": "Sep 25, 2015 10:47:03 AM",
+      "dateFinished": "Sep 25, 2015 10:47:26 AM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "select origin, quarter, count(*) count from default_qubole_airline_origin_destination where quarter is not NULL group by origin, quarter order by count desc limit 100",
+      "config": {
+        "colWidth": 12.0,
+        "graph": {
+          "mode": "multiBarChart",
+          "height": 300.0,
+          "optionOpen": true,
+          "keys": [
+            {
+              "name": "origin",
+              "index": 0.0,
+              "aggr": "sum"
+            }
+          ],
+          "values": [
+            {
+              "name": "count",
+              "index": 2.0,
+              "aggr": "sum"
+            }
+          ],
+          "groups": [
+            {
+              "name": "quarter",
+              "index": 1.0,
+              "aggr": "sum"
+            }
+          ],
+          "scatter": {
+            "xAxis": {
+              "name": "origin",
+              "index": 0.0,
+              "aggr": "sum"
+            },
+            "yAxis": {
+              "name": "quarter",
+              "index": 1.0,
+              "aggr": "sum"
+            }
+          }
+        }
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "jobName": "paragraph_1443178207756_-1463711429",
+      "id": "20150925-105007_597711845",
+      "result": {
+        "code": "SUCCESS",
+        "type": "TABLE",
+        "msg": "origin\tquarter\tcount\n\"ATL\"\t4\t585943\t\n\"ATL\"\t2\t572598\t\n\"ATL\"\t3\t572256\t\n\"ATL\"\t1\t500581\t\n\"ORD\"\t2\t491543\t\n\"ORD\"\t3\t466277\t\n\"ORD\"\t4\t447966\t\n\"ORD\"\t1\t414078\t\n\"DFW\"\t4\t395589\t\n\"DFW\"\t2\t394314\t\n\"DFW\"\t3\t385744\t\n\"DEN\"\t3\t352433\t\n\"DEN\"\t2\t350541\t\n\"DEN\"\t4\t338047\t\n\"DFW\"\t1\t334973\t\n\"CLT\"\t4\t320120\t\n\"CLT\"\t2\t309697\t\n\"CLT\"\t3\t308442\t\n\"DEN\"\t1\t304126\t\n\"CLT\"\t1\t278568\t\n\"PHX\"\t4\t267915\t\n\"PHX\"\t3\t267910\t\n\"LAX\"\t2\t257623\t\n\"PHX\"\t1\t254131\t\n\"PHX\"\t2\t251099\t\n\"LAX\"\t3\t245908\t\n\"LAX\"\t4\t242943\t\n\"MSP\"\t2\t242774\t\n\"MSP\"\t4\t240772\t\n\"MSP\"\t3\t238894\t\n\"IAH\"\t4\t230179\t\n\"IAH\"\t1\t226183\t\n\"IAH\"\t2\t224701\t\n\"DTW\"\t2\t224464\t\n\"DTW\"\t4\t218456\t\n\"LAX\"\t1\t216789\t\n\"IAH\"\t3\t215317\t\n\"LAS\"\t3\t212800\t\n\"DTW\"\t3\t211875\t\n\"MSP\"\t1\t210818\t\n\"LAS\"\t4\t208455\t\n\"PHL\"\t2\t205220\t\n\"PHL\"\t4\t205053\t\n\"LAS\"\t2\t203396\t\n\"PHL\"\t3\t203169\t\n\"LAS\"\t1\t198329\t\n\"DTW\"\t1\t196459\t\n\"SEA\"\t3\t196199\t\n\"SEA\"\t2\t182331\t\n\"PHL\"\t1\t177207\t\n\"SLC\"\t3\t174109\t\n\"SEA\"\t4\t172549\t\n\"SFO\"\t3\t168273\t\n\"SFO\"\t2\t166709\t\n\"SLC\"\t2\t163611\t\n\"SFO\"\t4\t162051\t\n\"SLC\"\t4\t155542\t\n\"MCO\"\t2\t152253\t\n\"CVG\"\t2\t149251\t\n\"MCO\"\t1\t147277\t\n\"CVG\"\t3\t146615\t\n\"SLC\"\t1\t144876\t\n\"MCO\"\t4\t144103\t\n\"CVG\"\t4\t141082\t\n\"SEA\"\t1\t136729\t\n\"SFO\"\t1\t134752\t\n\"CVG\"\t1\t130466\t\n\"BOS\"\t2\t127430\t\n\"LGA\"\t2\t127420\t\n\"DCA\"\t2\t125981\t\n\"IAD\"\t2\t125825\t\n\"MCO\"\t3\t125714\t\n\"BOS\"\t3\t123382\t\n\"LGA\"\t3\t122713\t\n\"DCA\"\t3\t121217\t\n\"LGA\"\t4\t118307\t\n\"DCA\"\t4\t117944\t\n\"BOS\"\t4\t117260\t\n\"IAD\"\t1\t115924\t\n\"IAD\"\t4\t114798\t\n\"IAD\"\t3\t113989\t\n\"EWR\"\t2\t110173\t\n\"BWI\"\t3\t107754\t\n\"BWI\"\t2\t105037\t\n\"BWI\"\t4\t104957\t\n\"EWR\"\t4\t104524\t\n\"EWR\"\t3\t104487\t\n\"DCA\"\t1\t104110\t\n\"EWR\"\t1\t102976\t\n\"PDX\"\t3\t101936\t\n\"LGA\"\t1\t99723\t\n\"JFK\"\t2\t99313\t\n\"JFK\"\t3\t97973\t\n\"FLL\"\t1\t97782\t\n\"SAN\"\t3\t97503\t\n\"BOS\"\t1\t96220\t\n\"MEM\"\t4\t96146\t\n\"JFK\"\t4\t96138\t\n\"MEM\"\t2\t96070\t\n\"SAN\"\t2\t95953\t\n"
+      },
+      "dateCreated": "Sep 25, 2015 10:50:07 AM",
+      "dateStarted": "Sep 25, 2015 10:50:41 AM",
+      "dateFinished": "Sep 25, 2015 10:51:37 AM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "config": {},
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "jobName": "paragraph_1443178241780_-1947340272",
+      "id": "20150925-105041_188415639",
+      "dateCreated": "Sep 25, 2015 10:50:41 AM",
+      "status": "READY",
+      "progressUpdateIntervalMs": 500
+    }
+  ],
+  "name": "PrestoExampleNote",
+  "id": "PrestoExampleNote",
+  "angularObjects": {},
+  "config": {
+    "looknfeel": "default"
+  },
+  "info": {}
+}
