@@ -4,7 +4,7 @@ if [ -f /usr/lib/zeppelin/bin/zeppelin-daemon.sh ]; then
   #TODO These exports are done in zeppelin start script also now. These can
   #be removed at some later point.
 
-  source /media/ephemeral0/logs/cloud_provider.sh
+  FILE="/usr/lib/qubole/cloud_info.sh" && [[ -f $FILE ]] && source $FILE
   if [[ $cloud_provider == "gce" ]]; then
     export FIRST_CLASS_NOTEBOOK_LOC=${gs_first_class_notebook_loc}
   else

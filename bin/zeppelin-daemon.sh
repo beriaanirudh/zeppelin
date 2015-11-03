@@ -157,7 +157,7 @@ function check_if_process_is_alive() {
 }
 
 function initqubole() {
-  source /media/ephemeral0/logs/cloud_provider.sh
+  FILE="/usr/lib/qubole/cloud_info.sh" && [[ -f $FILE ]] && source $FILE
   if [[ $cloud_provider == "gce" ]]; then
     source /usr/lib/cloudman/cloudman/udf/toppings/hadoop_node_init_ext.sh
     export FIRST_CLASS_NOTEBOOK_LOC=`nodeinfo gs_first_class_notebook_location`

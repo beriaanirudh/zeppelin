@@ -1,6 +1,6 @@
 #!/bin/bash -x
 
-source /media/ephemeral0/logs/cloud_provider.sh
+FILE="/usr/lib/qubole/cloud_info.sh" && [[ -f $FILE ]] && source $FILE
 if [[ $cloud_provider == "gce" ]]; then
   source /usr/lib/cloudman/cloudman/udf/toppings/hadoop_node_init_ext.sh
 else
