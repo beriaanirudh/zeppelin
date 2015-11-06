@@ -67,7 +67,7 @@ public class NoteInterpreterLoader {
         InterpreterSetting setting = factory.get(id);
         if (setting == null) {
           interpreterSettingToBeRemoved.add(id);
-        }else{
+        } else {
           settings.add(setting);
         }
       }
