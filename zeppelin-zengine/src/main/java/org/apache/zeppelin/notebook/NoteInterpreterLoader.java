@@ -61,16 +61,17 @@ public class NoteInterpreterLoader {
   public List<InterpreterSetting> getInterpreterSettings() {
     List<String> interpreterSettingIds = factory.getNoteInterpreterSettingBinding(noteId);
     LinkedList<InterpreterSetting> settings = new LinkedList<InterpreterSetting>();
+    List<String> interpreterSettingToBeRemoved = new LinkedList<>();
     synchronized (interpreterSettingIds) {
       for (String id : interpreterSettingIds) {
         InterpreterSetting setting = factory.get(id);
         if (setting == null) {
-          // interpreter setting is removed from factory. remove id from here, too
-          interpreterSettingIds.remove(id);
-        } else {
+          interpreterSettingToBeRemoved.add(id);
+        }else{
           settings.add(setting);
         }
       }
+      interpreterSettingIds.removeAll(interpreterSettingToBeRemoved);
     }
     return settings;
   }
