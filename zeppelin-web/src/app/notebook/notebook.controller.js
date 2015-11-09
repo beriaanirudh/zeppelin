@@ -69,7 +69,6 @@ angular.module('zeppelinWebApp').controller('NotebookCtrl',
 			   return;
 		   }
 	  });
-	  alert('This note has been deleted in QDS');
 	  $location.path('/#');
   });
 
