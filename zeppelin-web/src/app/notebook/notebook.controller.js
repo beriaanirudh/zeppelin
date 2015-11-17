@@ -64,11 +64,12 @@ angular.module('zeppelinWebApp').controller('NotebookCtrl',
 
   $scope.$on('setNoteMenu', function(event, notes) {
 	  var opennoteid = $scope.note.id;
-	  angular.forEach(notes, function(note){
-		   if(note.id === opennoteid){
-			   return;
-		   }
-	  });
+
+	  for( var i =0; i < notes.length; i++){
+	    if(notes[i].id === opennoteid){
+	      return;
+	    }
+	  }
 	  $location.path('/#');
   });
 
@@ -209,6 +210,7 @@ angular.module('zeppelinWebApp').controller('NotebookCtrl',
       }
     });
   };
+
 
   $scope.saveNote = function() {
     if ($scope.note && $scope.note.paragraphs) {
