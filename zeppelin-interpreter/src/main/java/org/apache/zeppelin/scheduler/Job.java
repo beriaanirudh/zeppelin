@@ -183,14 +183,14 @@ public abstract class Job {
       LOGGER.error("Job failed", e);
       progressUpdator.terminate();
       this.exception = e;
-      result = new InterpreterResult(InterpreterResult.Code.ERROR, e.getMessage());
+      result = new InterpreterResult(InterpreterResult.Code.ERROR, Job.getStack(e));
       errorMessage = getStack(e);
       dateFinished = new Date();
     } catch (Throwable e) {
       LOGGER.error("Job failed", e);
       progressUpdator.terminate();
       this.exception = e;
-      result = new InterpreterResult(InterpreterResult.Code.ERROR, e.getMessage());
+      result = new InterpreterResult(InterpreterResult.Code.ERROR, Job.getStack(e));
       errorMessage = getStack(e);
       dateFinished = new Date();
     } finally {
