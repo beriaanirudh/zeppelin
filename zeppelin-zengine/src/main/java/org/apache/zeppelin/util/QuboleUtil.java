@@ -141,6 +141,8 @@ public class QuboleUtil {
     if (FEATURE_DISABLED)
       return;
     String noteBookDir = zepConfig.getNotebookDir();
+    noteBookDir = noteBookDir.endsWith("/") ? noteBookDir.substring(0, noteBookDir.length() - 1)
+        : noteBookDir;
     String downloadPath = noteBookDir + "/" + noteId + "/note.json";
 
     String s3DownloadPath = getS3Path(noteId);
@@ -169,38 +171,38 @@ public class QuboleUtil {
     return s3Loc + noteId + "/note.json";
   }
 
-  public static void initNoteBook() {
+  public static void initNoteBook() throws IOException {
     if (FEATURE_DISABLED) {
       return;
     }
     String apiPath = opsApiPath;
     LOG.info("Making GET request to " + apiPath + " to update notebook");
 
-    try {
-      HttpURLConnection connection = sendRequestToQuboleRails(apiPath, null, "GET");
-      int responseCode = connection.getResponseCode();
-      if (responseCode == 200) {
-        InputStream inputStream = connection.getInputStream();
-        BufferedReader bis = new BufferedReader(new InputStreamReader(inputStream));
-        String readLine = bis.readLine();
-        JsonObject obj = (JsonObject) new JsonParser().parse(readLine);
-        JsonElement jsonNotes = obj.get("notes");
+    HttpURLConnection connection = sendRequestToQuboleRails(apiPath, null, "GET");
+    int responseCode = connection.getResponseCode();
+    if (responseCode == 200) {
+      LOG.info("GET request to rails successful");
+      InputStream inputStream = connection.getInputStream();
+      BufferedReader bis = new BufferedReader(new InputStreamReader(inputStream));
+      String readLine = bis.readLine();
+      JsonObject obj = (JsonObject) new JsonParser().parse(readLine);
+      JsonElement jsonNotes = obj.get("notes");
 
-        JsonElement parse = new JsonParser().parse(jsonNotes.getAsString());
-        if (parse instanceof JsonArray) {
-          JsonArray arr = (JsonArray) parse;
-          for (int i = 0; i < arr.size(); i++) {
-            JsonElement jsonElement = arr.get(i);
-            String noteId = jsonElement.getAsString();
+      JsonElement parse = new JsonParser().parse(jsonNotes.getAsString());
+      if (parse instanceof JsonArray) {
+        JsonArray arr = (JsonArray) parse;
+        for (int i = 0; i < arr.size(); i++) {
+          JsonElement jsonElement = arr.get(i);
+          String noteId = jsonElement.getAsString();
+          try {
             fetchFromS3(noteId);
+          } catch (IOException e) {
+            LOG.info("Error occured when downloading note" + noteId + ":" + e.getMessage());
           }
         }
-        LOG.info("GET request to rails successful");
-      } else {
-        LOG.info(responseCode + " error in making opsapi call to rails");
       }
-    } catch (IOException e) {
-      LOG.info(e.toString());
+    } else {
+      LOG.info(responseCode + " error in making opsapi call to rails");
     }
   }
 
