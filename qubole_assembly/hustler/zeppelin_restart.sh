@@ -24,8 +24,8 @@ function start_zeppelin_process() {
   fi
 }
 
-wget localhost:8082 -O /dev/null
 logfile=/usr/lib/zeppelin/logs/zeppelin_restart.log
+wget localhost:8082 -O /dev/null
 success=$?
 if [ "$success" != "0" ]; then
   zep_pid=`jps -m | grep ZeppelinServer  | cut -d" " -f 1`
