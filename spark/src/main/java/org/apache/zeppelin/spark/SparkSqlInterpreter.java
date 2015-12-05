@@ -50,6 +50,7 @@ public class SparkSqlInterpreter extends Interpreter {
   }
 
   private int maxResult;
+  private int maxConcurrency = 0;
 
   public SparkSqlInterpreter(Properties property) {
     super(property);
@@ -77,6 +78,22 @@ public class SparkSqlInterpreter extends Interpreter {
       lazy.open();
     }
     return spark;
+  }
+
+  private int getMaxConcurrency() {
+    if (this.maxConcurrency > 0) {
+      return maxConcurrency;
+    }
+    maxConcurrency = 10;
+    try {
+      maxConcurrency = Integer.parseInt(getProperty("zeppelin.spark.sql.maxConcurrency"));
+    } catch (Exception e) {
+      logger.info("Found exception while trying to fetch value of max Concurrency" , e);
+    }
+    if (maxConcurrency < 1) {
+      maxConcurrency = 10;
+    }
+    return maxConcurrency;
   }
 
   public boolean concurrentSQL() {
@@ -154,7 +171,7 @@ public class SparkSqlInterpreter extends Interpreter {
   @Override
   public Scheduler getScheduler() {
     if (concurrentSQL()) {
-      int maxConcurrency = 10;
+      int maxConcurrency = getMaxConcurrency();
       return SchedulerFactory.singleton().createOrGetParallelScheduler(
           SparkSqlInterpreter.class.getName() + this.hashCode(), maxConcurrency);
     } else {
