@@ -149,18 +149,40 @@ public class QuboleUtil {
     LOG.info("Trying to download note from " + s3DownloadPath + " to " + downloadPath);
     String downloadCommand = s3cmd + " get  " + s3DownloadPath + " " + downloadPath;
     LOG.info("Download command:\n" + downloadCommand);
-    try {
-      Process process = Runtime.getRuntime().exec(downloadCommand);
-      process.waitFor();
-    } catch (InterruptedException e) {
-      LOG.info("Interrupted Exception occured!");
+    int s3Retry = 4;
+    for (int x = 0; x < s3Retry; x++) {
+      boolean retryReqd = false;
+      try {
+        Process process = Runtime.getRuntime().exec(downloadCommand);
+        process.waitFor();
+      } catch (InterruptedException e) {
+        LOG.info("Exception occured while trying to download " + noteId + " from s3.", e);
+        retryReqd = true;
+      }
+      retryReqd = retryReqd || deleteNoteFolderIfEmpty(noteBookDir + "/" + noteId);
+      if (retryReqd) {
+        try {
+          Thread.sleep(500);
+        } catch (Exception e) {
+        }
+        LOG.warn("Retrying download for " + noteId);
+      } else {
+        break;
+      }
     }
+    deleteNoteFolderIfEmpty(noteBookDir + "/" + noteId);
+  }
 
-    File f = new File(downloadPath);
-    if (!f.isFile()) {
-      throw new IOException("File could not be downloaded from "
-          + "S3." + " Please check the directory.");
+  private static boolean deleteNoteFolderIfEmpty(String path) {
+    boolean deleted = false;
+    File noteF =  new File(path + "/note.json");
+    if (!noteF.isFile() || noteF.length() == 0) {
+      noteF.delete();
+      File f =  new File(path);
+      f.delete();
+      deleted = true;
     }
+    return deleted;
   }
 
   private static String getS3Path(String noteId) {
