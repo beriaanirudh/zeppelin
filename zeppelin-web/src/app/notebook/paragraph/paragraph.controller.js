@@ -995,6 +995,13 @@ angular.module('zeppelinWebApp')
     var user = (pdata.user === undefined || pdata.user === null) ? 'anonymous' : pdata.user;
     var desc = 'Took ' + moment.duration((timeMs / 1000), 'seconds').format('h [hrs] m [min] s [sec]') +
       '. Last updated by ' + user + ' at ' + moment(pdata.dateFinished).format('MMMM DD YYYY, h:mm:ss A') + '.';
+
+    var epochsec = Date.parse(pdata.dateStarted);
+    if(!isNaN(epochsec)){
+      var startDate = new Date(epochsec).toUTCString();
+      desc += 'Last run at ' + startDate;
+    }
+
     if ($scope.isResultOutdated()) {
       desc += ' (outdated)';
     }
