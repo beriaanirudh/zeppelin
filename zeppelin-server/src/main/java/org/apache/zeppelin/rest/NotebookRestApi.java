@@ -883,12 +883,16 @@ public class NotebookRestApi {
   public Response associateNote(@PathParam("noteId") String noteId, String req)
       throws IOException {
     Note note = notebook.getNote(noteId);
-    if (note == null){
+    if (note == null) {
       note = notebook.fetchAndLoadNoteFromS3(noteId);
+      if (note == null) {
+        LOG.error("Asscociate failed for note " + noteId);
+        return new JsonResponse<>(Status.NOT_FOUND).build();
+      }
       ZeppelinServer.notebookWsServer.refresh(note);
       LOG.info("Succesfully processed associate request for note " + noteId);
     }
-    return new JsonResponse(Status.OK).build();
+    return new JsonResponse<>(Status.OK).build();
   }
 
   /**

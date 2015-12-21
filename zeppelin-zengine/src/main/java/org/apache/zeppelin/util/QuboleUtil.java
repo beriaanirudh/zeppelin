@@ -6,13 +6,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.zeppelin.conf.ZeppelinConfiguration;
 import org.apache.zeppelin.notebook.Note;
 import org.slf4j.Logger;
@@ -119,7 +123,7 @@ public class QuboleUtil {
           LOG.info("Waiting for 5 seconds");
           Thread.sleep(5000);
         }
-      } catch (IOException  | InterruptedException e) {
+      } catch (IOException | InterruptedException e) {
         LOG.info(e.toString());
       }
       retries--;
@@ -137,60 +141,123 @@ public class QuboleUtil {
     return quboleBaseURL;
   }
 
-  public static void fetchFromS3(String noteId) throws IOException {
-    if (FEATURE_DISABLED)
+  public static void fetchFromS3(List<String> noteIds) throws IOException {
+    if (noteIds.isEmpty()) {
+      LOG.info("No notes for this cluster");
       return;
+    }
+    File includesFile = createTempFileWithNoteIds(noteIds);
+    File tempDownloadDir = createTempDownloadDirectory();
+
+    if (!tempDownloadDir.exists()) {
+      return;
+    }
+    String s3DownloadPath = S3Loc.endsWith("/") ? S3Loc : S3Loc + "/";
+    String downloadCmd = s3cmd + " get -r --skip-existing --rinclude-from="
+        + includesFile.getAbsolutePath() + " --rexclude=.*  " + s3DownloadPath + " "
+        + tempDownloadDir.getAbsolutePath();
+    int numRetries = 4;
+    for (int i = 0; i < numRetries; i++) {
+      try {
+        Process process = Runtime.getRuntime().exec(downloadCmd);
+        process.waitFor();
+        cleanNotesDownloadDirectory(tempDownloadDir);
+        if (tempDownloadDir.listFiles().length == noteIds.size()) {
+          break;
+        }
+        LOG.info("Partial download occurred. Retrying download of notes");
+      } catch (InterruptedException e) {
+        LOG.info("Exception occured when trying to download notes" + e.getMessage());
+      }
+      try {
+        Thread.sleep(500);
+        LOG.info("Retrying download of notes");
+      } catch (Exception e) {
+        LOG.error(e.getMessage());
+      }
+    }
     String noteBookDir = zepConfig.getNotebookDir();
     noteBookDir = noteBookDir.endsWith("/") ? noteBookDir.substring(0, noteBookDir.length() - 1)
         : noteBookDir;
-    String downloadPath = noteBookDir + "/" + noteId + "/note.json";
+    copyNotesToNoteBookDir(new File(noteBookDir), tempDownloadDir);
+    includesFile.delete();
+  }
 
-    String s3DownloadPath = getS3Path(noteId);
-    LOG.info("Trying to download note from " + s3DownloadPath + " to " + downloadPath);
-    String downloadCommand = s3cmd + " get  " + s3DownloadPath + " " + downloadPath;
-    LOG.info("Download command:\n" + downloadCommand);
-    int s3Retry = 4;
-    for (int x = 0; x < s3Retry; x++) {
-      boolean retryReqd = false;
-      try {
-        Process process = Runtime.getRuntime().exec(downloadCommand);
-        process.waitFor();
-      } catch (InterruptedException e) {
-        LOG.info("Exception occured while trying to download " + noteId + " from s3.", e);
-        retryReqd = true;
-      }
-      retryReqd = retryReqd || deleteNoteFolderIfEmpty(noteBookDir + "/" + noteId);
-      if (retryReqd) {
+  private static File createTempFileWithNoteIds(List<String> noteIds) throws IOException {
+    File includesFile = File.createTempFile("noteincludes", null);
+    PrintWriter writer = new PrintWriter(includesFile);
+    for (String noteId : noteIds) {
+      writer.println("^" + noteId + "/");
+    }
+    writer.close();
+    return includesFile;
+  }
+
+  private static File createTempDownloadDirectory() throws IOException {
+    File tempDownloadDir = new File("/tmp/tempnotesloc");
+    if (tempDownloadDir.exists()) {
+      FileUtils.deleteDirectory(tempDownloadDir);
+    }
+    if (!tempDownloadDir.mkdir()) {
+      LOG.error(
+          "Error while creating directory to download Path:" + tempDownloadDir.getAbsolutePath());
+      throw new IOException("Error occured when creating temp directory for download");
+    }
+    return tempDownloadDir;
+  }
+
+  private static void copyNotesToNoteBookDir(File notebookDir, File downloadDir)
+      throws IOException {
+    LOG.info("Copy notes to notebook directory");
+    List<String> notes = new ArrayList<>();
+    if (!notebookDir.exists()) {
+      LOG.info("notebookdir doesnot exist");
+      return;
+    }
+    File[] availableNotes = notebookDir.listFiles();
+    for (int i = 0; i < availableNotes.length; i++) {
+      notes.add(availableNotes[i].getName());
+    }
+    File[] files = downloadDir.listFiles();
+    if (files != null && files.length > 0) {
+      for (File aFile : files) {
         try {
-          Thread.sleep(500);
-        } catch (Exception e) {
+          if (notes.contains(aFile.getName())) {
+            LOG.info("Note already present id :" + aFile.getName());
+            continue;
+          }
+          FileUtils.copyDirectoryToDirectory(aFile, notebookDir);
+          LOG.info("Note download sucessful id: " + aFile.getName());
+
+        } catch (IOException e) {
+          LOG.error(e.getMessage());
         }
-        LOG.warn("Retrying download for " + noteId);
-      } else {
-        break;
       }
     }
-    deleteNoteFolderIfEmpty(noteBookDir + "/" + noteId);
   }
 
-  private static boolean deleteNoteFolderIfEmpty(String path) {
-    boolean deleted = false;
-    File noteF =  new File(path + "/note.json");
-    if (!noteF.isFile() || noteF.length() == 0) {
-      noteF.delete();
-      File f =  new File(path);
-      f.delete();
-      deleted = true;
+  private static boolean hasEmptyNote(File file) {
+    boolean empty = true;
+    if (file.isDirectory()) {
+      File[] listFiles = file.listFiles();
+      if (listFiles.length == 1) {
+        File noteFile = listFiles[0];
+        empty = !(noteFile.getName().equals("note.json") && noteFile.length() > 0);
+        if (empty) {
+          LOG.warn("Note not downloaded for note: " + file.getName());
+        }
+      }
     }
-    return deleted;
+    return empty;
   }
 
-  private static String getS3Path(String noteId) {
-    String s3Loc = S3Loc;
-    if (!s3Loc.endsWith("/")) {
-      s3Loc = s3Loc + "/";
+  private static void cleanNotesDownloadDirectory(File dir) throws IOException {
+    File[] notes = dir.listFiles();
+    for (File notedir : notes) {
+      if (hasEmptyNote(notedir)) {
+        FileUtils.deleteDirectory(notedir);
+      }
     }
-    return s3Loc + noteId + "/note.json";
   }
 
   public static void initNoteBook() throws IOException {
@@ -211,24 +278,22 @@ public class QuboleUtil {
       JsonElement jsonNotes = obj.get("notes");
 
       JsonElement parse = new JsonParser().parse(jsonNotes.getAsString());
+      List<String> noteIds = new ArrayList<>();
       if (parse instanceof JsonArray) {
         JsonArray arr = (JsonArray) parse;
         for (int i = 0; i < arr.size(); i++) {
           JsonElement jsonElement = arr.get(i);
           String noteId = jsonElement.getAsString();
-          try {
-            fetchFromS3(noteId);
-          } catch (IOException e) {
-            LOG.info("Error occured when downloading note" + noteId + ":" + e.getMessage());
-          }
+          noteIds.add(noteId);
         }
       }
+      fetchFromS3(noteIds);
     } else {
       LOG.info(responseCode + " error in making opsapi call to rails");
     }
   }
 
-  public static String getClusterId(){
+  public static String getClusterId() {
     return clusterId;
   }
 

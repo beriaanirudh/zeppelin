@@ -756,7 +756,9 @@ public class Notebook {
   }
 
   public Note fetchAndLoadNoteFromS3(String noteId) throws IOException {
-    QuboleUtil.fetchFromS3(noteId);
+    List<String> noteIds = new ArrayList<>();
+    noteIds.add(noteId);
+    QuboleUtil.fetchFromS3(noteIds);
     return loadNoteFromRepo(noteId, null);
   }
 }
