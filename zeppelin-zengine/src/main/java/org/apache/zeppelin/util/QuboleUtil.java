@@ -19,6 +19,7 @@ import java.util.Properties;
 import org.apache.commons.io.FileUtils;
 import org.apache.zeppelin.conf.ZeppelinConfiguration;
 import org.apache.zeppelin.notebook.Note;
+import org.apache.zeppelin.notebook.Notebook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -320,5 +321,22 @@ public class QuboleUtil {
       }
     }
     return gson.toJson(infoMap);
+  }
+
+  public static Note downloadNoteIfNull(Notebook notebook, Note note, String noteId) {
+    if (note == null) {
+      // The note download might have failed for some reason
+      // Try to download note from s3 and add here.
+      // this can be triggered only from FCN UI
+      try {
+        note = notebook.fetchAndLoadNoteFromS3(noteId);
+      } catch (IOException e) {
+        LOG.error("Error while fetching and loading note", e);
+      }
+      if (note == null) {
+        LOG.error("Note download failed" + noteId);
+      }
+    }
+    return note;
   }
 }

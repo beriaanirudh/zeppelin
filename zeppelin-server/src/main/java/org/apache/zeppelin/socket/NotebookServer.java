@@ -443,6 +443,7 @@ public class NotebookServer extends WebSocketServlet implements
 
     Note note = notebook.getNote(noteId);
     NotebookAuthorization notebookAuthorization = notebook.getNotebookAuthorization();
+    note = QuboleUtil.downloadNoteIfNull(notebook, note, noteId);
     if (note != null) {
       if (!notebookAuthorization.isReader(noteId, userAndRoles)) {
         permissionError(conn, "read", fromMessage.principal, userAndRoles,
