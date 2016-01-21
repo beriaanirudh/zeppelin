@@ -155,6 +155,11 @@ public class VFSNotebookRepo implements NotebookRepo {
     FileObject noteJson = noteDir.resolveFile("note.json", NameScope.CHILD);
     if (!noteJson.exists()) {
       throw new IOException(noteJson.getName().toString() + " not found");
+    } else if (noteJson.getContent().getSize() == 0) {
+      noteJson.delete();
+      noteDir.delete();
+      logger.info("Empty json found for note :" + noteDir.getName());
+      return null;
     }
 
     GsonBuilder gsonBuilder = new GsonBuilder();
