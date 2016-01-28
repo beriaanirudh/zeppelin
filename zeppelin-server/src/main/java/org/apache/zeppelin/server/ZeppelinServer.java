@@ -278,6 +278,13 @@ public class ZeppelinServer extends Application {
       LOG.info("ZeppelinServer Webapp path: {}", warTempDirectory.getPath());
       webApp.setTempDirectory(warTempDirectory);
     }
+
+    ServletHolder holderHome = new ServletHolder("logs", LogsServlet.class);
+    holderHome.setInitParameter("resourceBase", "/usr/lib/zeppelin/logs");
+    holderHome.setInitParameter("dirAllowed", "true");
+    holderHome.setInitParameter("pathInfoOnly", "true");
+    webApp.addServlet(holderHome, "/logs/*");
+
     // Explicit bind to root
     webApp.addServlet(new ServletHolder(new DefaultServlet()), "/*");
     contexts.addHandler(webApp);
