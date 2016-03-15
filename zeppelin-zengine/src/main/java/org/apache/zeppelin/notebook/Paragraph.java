@@ -164,6 +164,12 @@ public class Paragraph extends Job implements Serializable, Cloneable {
         break;
       }
     }
+    // if the entire para has no whitespace and if a specific interpreter is
+    // specified via %x syntax, we need to make sure the paragraph text is
+    // empty. So set the scriptHeadIndex to the end of the string
+    if (scriptHeadIndex == 0 && text.startsWith("%")) {
+      scriptHeadIndex = text.length();
+    }
     if (scriptHeadIndex == 0) {
       return null;
     }
