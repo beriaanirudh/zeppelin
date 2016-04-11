@@ -1,0 +1,31 @@
+package org.apache.zeppelin.events;
+
+/**
+ */
+public class QuboleEventsEnum {
+
+  /**
+   *
+   * List of zeppelin events
+   *
+   */
+  public static enum EVENTTYPE {
+    SERVER_START,
+    SERVER_STOP,
+    NOTEBOOK_CREATE,
+    NOTEBOOK_DELETE,
+    NOTEBOOK_CLONE,
+    NOTEBOOK_LOCK,
+    NOTEBOOK_UNLOCK,
+    NOTEBOOK_ASSOCIATE,
+    NOTEBOOK_DISASSOCIATE,
+    NOTEBOOK_SCHEDULED_RUN,
+    PARAGRAPH_EXECUTION_START,
+    PARAGRAPH_EXECUTION_END,
+    PARAGRAPH_CANCEL,
+    PARAGRAPH_REMOVE,
+    INTERPRETER_CREATE,
+    INTERPRETER_REMOVE,
+    INTERPRETER_RESTART
+  }
+}

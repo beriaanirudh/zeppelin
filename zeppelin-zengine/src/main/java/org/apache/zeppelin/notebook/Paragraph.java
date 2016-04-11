@@ -26,6 +26,7 @@ import org.apache.zeppelin.user.UserCredentials;
 import org.apache.zeppelin.user.UsernamePassword;
 import org.apache.zeppelin.display.GUI;
 import org.apache.zeppelin.display.Input;
+import org.apache.zeppelin.events.QuboleParaEventIdObject;
 import org.apache.zeppelin.interpreter.*;
 import org.apache.zeppelin.interpreter.Interpreter.FormType;
 import org.apache.zeppelin.interpreter.InterpreterResult.Code;
@@ -53,6 +54,9 @@ public class Paragraph extends Job implements Serializable, Cloneable {
   private transient Note note;
   private transient AuthenticationInfo authenticationInfo;
   private transient String effectiveText;
+  //This is the primary key in the zeppelin_events table
+  private transient QuboleParaEventIdObject qbolStartParagraphEventId;
+
 
   String title;
   String text;
@@ -435,6 +439,14 @@ public class Paragraph extends Job implements Serializable, Cloneable {
   public void setReturn(InterpreterResult value, Throwable t) {
     setResult(value);
     setException(t);
+  }
+  
+  public void setQbolEventId(QuboleParaEventIdObject qbolEventId) {
+    this.qbolStartParagraphEventId = qbolEventId;
+  }
+
+  public QuboleParaEventIdObject getQbolEventId() {
+    return qbolStartParagraphEventId;
   }
 
   @Override

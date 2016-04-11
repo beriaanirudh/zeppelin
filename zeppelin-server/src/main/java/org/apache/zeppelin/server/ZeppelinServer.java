@@ -21,6 +21,8 @@ import org.apache.cxf.jaxrs.servlet.CXFNonSpringJaxrsServlet;
 import org.apache.zeppelin.conf.ZeppelinConfiguration;
 import org.apache.zeppelin.conf.ZeppelinConfiguration.ConfVars;
 import org.apache.zeppelin.dep.DependencyResolver;
+import org.apache.zeppelin.events.QuboleEventUtils;
+import org.apache.zeppelin.events.QuboleEventsEnum.EVENTTYPE;
 import org.apache.zeppelin.interpreter.InterpreterFactory;
 import org.apache.zeppelin.notebook.Notebook;
 import org.apache.zeppelin.notebook.NotebookAuthorization;
@@ -126,6 +128,7 @@ public class ZeppelinServer extends Application {
     LOG.info("Starting zeppelin server");
     try {
       jettyWebServer.start(); //Instantiates ZeppelinServer
+      QuboleEventUtils.saveEvent(EVENTTYPE.SERVER_START, null);
     } catch (Exception e) {
       LOG.error("Error while running jettyServer", e);
       System.exit(-1);
@@ -135,6 +138,7 @@ public class ZeppelinServer extends Application {
     Runtime.getRuntime().addShutdownHook(new Thread(){
       @Override public void run() {
         LOG.info("Shutting down Zeppelin Server ... ");
+        QuboleEventUtils.saveEvent(EVENTTYPE.SERVER_STOP, null);
         try {
           jettyWebServer.stop();
           notebook.getInterpreterFactory().close();

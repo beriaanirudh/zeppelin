@@ -28,14 +28,19 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.zeppelin.annotation.ZeppelinApi;
+
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.zeppelin.events.QuboleEventUtils;
+import org.apache.zeppelin.events.QuboleEventsEnum.EVENTTYPE;
 import org.apache.zeppelin.interpreter.InterpreterResult;
 import org.apache.zeppelin.interpreter.InterpreterSetting;
 import org.apache.zeppelin.notebook.Note;
@@ -52,6 +57,7 @@ import org.apache.zeppelin.rest.message.NewParagraphRunRequest;
 import org.apache.zeppelin.scheduler.Job;
 import org.apache.zeppelin.server.JsonResponse;
 import org.apache.zeppelin.socket.NotebookServer;
+import org.apache.zeppelin.socket.QuboleServerHelper;
 import org.apache.zeppelin.user.AuthenticationInfo;
 import org.apache.zeppelin.utils.SecurityUtils;
 import org.quartz.CronExpression;
@@ -880,18 +886,21 @@ public class NotebookRestApi {
    */
   @PUT
   @Path("note/associate/{noteId}")
-  public Response associateNote(@PathParam("noteId") String noteId, String req)
+  public Response associateNote(@Context HttpServletRequest request,
+                        @PathParam("noteId") String noteId, String req)
       throws IOException {
     Note note = notebook.getNote(noteId);
     if (note == null) {
       note = notebook.fetchAndLoadNoteFromS3(noteId);
       if (note == null) {
-        LOG.error("Asscociate failed for note " + noteId);
+        LOG.error("Associate failed for note " + noteId);
         return new JsonResponse<>(Status.NOT_FOUND).build();
       }
       ZeppelinServer.notebookWsServer.refresh(note);
       LOG.info("Succesfully processed associate request for note " + noteId);
     }
+    String userId = request.getHeader(QuboleServerHelper.QBOL_USER_ID);
+    QuboleEventUtils.saveEvent(EVENTTYPE.NOTEBOOK_ASSOCIATE, userId, note);
     return new JsonResponse<>(Status.OK).build();
   }
 

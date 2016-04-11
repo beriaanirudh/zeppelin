@@ -94,9 +94,26 @@ public class QuboleUtil {
     sendRequestToQuboleRails(apiPath, params, "PUT");
   }
 
+  /**
+   * send events to web tier
+   */
+  public static HttpURLConnection sendEvent(String event) {
+    String apiPath = opsApiPath + "/events/";
+    Map<String, String> params = new HashMap<String, String>();
+    params.put("event", event);
+    return sendRequestToQuboleRails(apiPath, params, "POST", 1);
+  }
+
   private static HttpURLConnection sendRequestToQuboleRails(String apiPath,
       Map<String, String> params, String requestMethod) {
-    int retries = 4;
+    return sendRequestToQuboleRails(apiPath, params, requestMethod, 4);
+  }
+
+  private static HttpURLConnection sendRequestToQuboleRails(String apiPath,
+      Map<String, String> params, String requestMethod, int numRetries) {
+    if (numRetries <= 0)
+      return null;
+    int retries = numRetries;
     while (retries > 0) {
       try {
         HttpURLConnection connection = (HttpURLConnection) (new URL(getQuboleBaseURL() + apiPath))
@@ -115,7 +132,6 @@ public class QuboleUtil {
           out.close();
         }
         int responseCode = connection.getResponseCode();
-
         if (responseCode == 200) {
           LOG.info(requestMethod + " request to rails successful");
           return connection;

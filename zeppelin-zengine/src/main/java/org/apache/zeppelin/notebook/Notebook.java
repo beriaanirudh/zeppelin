@@ -34,6 +34,8 @@ import org.apache.zeppelin.conf.ZeppelinConfiguration;
 import org.apache.zeppelin.conf.ZeppelinConfiguration.ConfVars;
 import org.apache.zeppelin.display.AngularObject;
 import org.apache.zeppelin.display.AngularObjectRegistry;
+import org.apache.zeppelin.events.QuboleEventUtils;
+import org.apache.zeppelin.events.QuboleEventsEnum.EVENTTYPE;
 import org.apache.zeppelin.interpreter.InterpreterFactory;
 import org.apache.zeppelin.interpreter.InterpreterGroup;
 import org.apache.zeppelin.interpreter.InterpreterSetting;
@@ -678,6 +680,7 @@ public class Notebook {
           notebook.getInterpreterFactory().restart(setting.id());
         }
       }      
+      QuboleEventUtils.saveEvent(EVENTTYPE.NOTEBOOK_SCHEDULED_RUN, null, note);
     }
   }
 

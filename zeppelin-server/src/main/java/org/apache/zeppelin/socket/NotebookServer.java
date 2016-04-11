@@ -40,6 +40,8 @@ import org.apache.zeppelin.interpreter.remote.RemoteAngularObjectRegistry;
 import org.apache.zeppelin.interpreter.thrift.InterpreterCompletion;
 import org.apache.zeppelin.user.AuthenticationInfo;
 import org.apache.zeppelin.interpreter.InterpreterOutput;
+import org.apache.zeppelin.events.QuboleEventUtils;
+import org.apache.zeppelin.events.QuboleEventsEnum.EVENTTYPE;
 import org.apache.zeppelin.interpreter.InterpreterResult;
 import org.apache.zeppelin.interpreter.InterpreterSetting;
 import org.apache.zeppelin.interpreter.remote.RemoteInterpreterProcessListener;
@@ -98,6 +100,7 @@ public class NotebookServer extends WebSocketServlet implements
     LOG.info("New connection from {} : {}", conn.getRequest().getRemoteAddr(),
         conn.getRequest().getRemotePort());
     connectedSockets.add(conn);
+    QuboleServerHelper.addConnToUserMapping(conn);
   }
 
   @Override
@@ -573,7 +576,6 @@ public class NotebookServer extends WebSocketServlet implements
     notebook.removeNote(noteId, subject);
     removeNote(noteId);
     broadcastNoteList(subject);
-    QuboleUtil.updateNoteDeletionInRails(noteId);
   }
 
   private void updateParagraph(NotebookSocket conn, HashSet<String> userAndRoles,
@@ -652,6 +654,8 @@ public class NotebookServer extends WebSocketServlet implements
 
     /** We dont want to remove the last paragraph */
     if (!note.isLastParagraph(paragraphId)) {
+      //get the para reference before removing it from note
+      Paragraph p = note.getParagraph(paragraphId);
       note.removeParagraph(paragraphId);
       note.persist(subject);
       broadcastNote(note);
@@ -1045,6 +1049,8 @@ public class NotebookServer extends WebSocketServlet implements
     note.persist(subject);
     try {
       note.run(paragraphId);
+      QuboleEventUtils.saveEvent(EVENTTYPE.PARAGRAPH_EXECUTION_START,
+          QuboleServerHelper.getUserForConn(conn), p);
     } catch (Exception ex) {
       LOG.error("Exception from run", ex);
       if (p != null) {
@@ -1155,6 +1161,9 @@ public class NotebookServer extends WebSocketServlet implements
         try {
           //TODO(khalid): may change interface for JobListener and pass subject from interpreter
           note.persist(null);
+          // this listener method is called from RemoteScheduler#JobRunner#run
+          // when the job run completes
+          QuboleEventUtils.saveEvent(EVENTTYPE.PARAGRAPH_EXECUTION_END, null, job);
         } catch (IOException e) {
           LOG.error(e.toString(), e);
         }

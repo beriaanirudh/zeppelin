@@ -37,6 +37,8 @@ import com.google.gson.JsonSyntaxException;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.zeppelin.annotation.ZeppelinApi;
 import org.apache.zeppelin.dep.Repository;
+import org.apache.zeppelin.events.QuboleEventUtils;
+import org.apache.zeppelin.events.QuboleEventsEnum.EVENTTYPE;
 import org.apache.zeppelin.interpreter.*;
 import org.apache.zeppelin.interpreter.Interpreter.RegisteredInterpreter;
 import org.apache.zeppelin.rest.message.NewInterpreterSettingRequest;
@@ -94,7 +96,7 @@ public class InterpreterRestApi {
   @POST
   @Path("setting")
   @ZeppelinApi
-  public Response newSettings(String message) {
+  public Response newSettings(@Context HttpServletRequest req, String message) {
     try {
       NewInterpreterSettingRequest request = gson.fromJson(message,
           NewInterpreterSettingRequest.class);
@@ -110,6 +112,7 @@ public class InterpreterRestApi {
           request.getOption(),
           p);
       logger.info("new setting created with {}", interpreterSetting.id());
+      QuboleEventUtils.saveEvent(EVENTTYPE.INTERPRETER_CREATE, getUserId(req), interpreterSetting);
       return new JsonResponse(Status.CREATED, "", interpreterSetting).build();
     } catch (InterpreterException e) {
       logger.error("Exception in InterpreterRestApi while creating ", e);
@@ -177,9 +180,13 @@ public class InterpreterRestApi {
   @DELETE
   @Path("setting/{settingId}")
   @ZeppelinApi
-  public Response removeSetting(@PathParam("settingId") String settingId) throws IOException {
+  public Response removeSetting(@Context HttpServletRequest request,
+      @PathParam("settingId") String settingId) throws IOException {
     logger.info("Remove interpreterSetting {}", settingId);
+    InterpreterSetting interpreterSetting = interpreterFactory.get(settingId);
     interpreterFactory.remove(settingId);
+    QuboleEventUtils.saveEvent(EVENTTYPE.INTERPRETER_REMOVE, getUserId(request),
+        interpreterSetting);
     return new JsonResponse(Status.OK).build();
   }
 
@@ -189,7 +196,8 @@ public class InterpreterRestApi {
   @PUT
   @Path("setting/restart/{settingId}")
   @ZeppelinApi
-  public Response restartSetting(@PathParam("settingId") String settingId) {
+  public Response restartSetting(@Context HttpServletRequest request,
+      @PathParam("settingId") String settingId) {
     logger.info("Restart interpreterSetting {}", settingId);
     try {
       interpreterFactory.restart(settingId);
@@ -202,6 +210,8 @@ public class InterpreterRestApi {
     if (setting == null) {
       return new JsonResponse(Status.NOT_FOUND, "", settingId).build();
     }
+    QuboleEventUtils.saveEvent(EVENTTYPE.INTERPRETER_RESTART, getUserId(request),
+       interpreterFactory.get(settingId));
     return new JsonResponse(Status.OK, "", setting).build();
   }
 
@@ -215,6 +225,9 @@ public class InterpreterRestApi {
     return new JsonResponse(Status.OK, "", m).build();
   }
 
+  private String getUserId(HttpServletRequest request) {
+    return request.getHeader("qboluserid");
+  }
   /**
    * List of dependency resolving repositories
    * @return

@@ -32,6 +32,12 @@ import org.apache.zeppelin.display.Input;
 import org.apache.zeppelin.interpreter.*;
 import org.apache.zeppelin.interpreter.remote.RemoteAngularObjectRegistry;
 import org.apache.zeppelin.interpreter.thrift.InterpreterCompletion;
+import org.apache.zeppelin.events.QuboleEventUtils;
+import org.apache.zeppelin.events.QuboleEventsEnum.EVENTTYPE;
+import org.apache.zeppelin.interpreter.Interpreter;
+import org.apache.zeppelin.interpreter.InterpreterException;
+import org.apache.zeppelin.interpreter.InterpreterGroup;
+import org.apache.zeppelin.interpreter.InterpreterSetting;
 import org.apache.zeppelin.notebook.repo.NotebookRepo;
 import org.apache.zeppelin.notebook.utility.IdHashes;
 import org.apache.zeppelin.resource.ResourcePoolUtils;
@@ -411,6 +417,7 @@ public class Note implements Serializable, JobListener {
         p.setAuthenticationInfo(authenticationInfo);
         p.setNoteReplLoader(replLoader);
         run(p.getId());
+        QuboleEventUtils.saveEvent(EVENTTYPE.PARAGRAPH_EXECUTION_START, null, p);
       }
     }
   }
