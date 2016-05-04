@@ -174,9 +174,9 @@ class PySparkCompletion:
       self.interpreterObject.setStatementsFinished(result, False)
 
 
-output = Logger()
-sys.stdout = output
-sys.stderr = output
+_zeppelin_output_internal = Logger()
+sys.stdout = _zeppelin_output_internal
+sys.stderr = _zeppelin_output_internal
 
 client = GatewayClient(port=int(sys.argv[1]))
 sparkVersion = SparkVersion(int(sys.argv[2]))
@@ -276,4 +276,4 @@ while True :
   except:
     intp.setStatementsFinished(traceback.format_exc(), True)
 
-  output.reset()
+  _zeppelin_output_internal.reset()
