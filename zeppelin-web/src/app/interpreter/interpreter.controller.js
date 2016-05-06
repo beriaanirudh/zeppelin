@@ -205,9 +205,12 @@ angular.module('zeppelinWebApp').controller('InterpreterCtrl', function($scope, 
             success(function(data, status, headers, config) {
               var index = _.findIndex($scope.interpreterSettings, { 'id': settingId });
               $scope.interpreterSettings[index] = data.body;
+              ngToast.info('Interpreter stopped. Will be lazily started on next run.');
             }).
             error(function(data, status, headers, config) {
-              console.log('Error %o %o', status, data.message);
+              var errorMsg = (data !== null) ? data.message : 'Could not connect to server.';
+              console.log('Error %o %o', status, errorMsg);
+              ngToast.danger(errorMsg);
             });
         }
       }
