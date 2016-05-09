@@ -2140,6 +2140,34 @@ angular.module('zeppelinWebApp')
     $window.open(redirectToUrl);
   };
 
+  $scope.exportAsPdf = function () {
+      var noteId = $route.current.pathParams.noteId;
+      var redirectToUrl = location.protocol + '//' + location.host + location.pathname + '#/notebook/' + noteId + '/paragraph/' + $scope.paragraph.id+'?asIframe';
+      var newWindow = $window.open(redirectToUrl);
+      var timeoutInterval = 5000;
+      if(!newWindow){
+        ngToast.info('Error occured');
+      }
+      var interval = setInterval(function(){
+        var elem = newWindow.document.getElementsByClassName('paragraphAsIframe');
+        if(elem){
+          if(newWindow.document.readyState === 'complete' &&
+                    elem[0] && elem[0].clientWidth > 0){
+            clearInterval(interval);
+            //this timeout is required to render the charts
+            setTimeout(function(){
+              newWindow.print();
+            }, 1500);
+          }
+        }
+        timeoutInterval -= 1000;
+        if(timeoutInterval < 0){
+          clearInterval(interval);
+          ngToast.info('Error occured');
+        }
+      }, 1000);
+    };
+
   $scope.showScrollDownIcon = function(){
     var doc = angular.element('#p' + $scope.paragraph.id + '_text');
     if(doc[0]){

@@ -11,15 +11,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 body {
   background: white;
 }
 
-.labelBtn {
-  display: none;
+/*
+	The last div contains as many number of <span>
+	as the number of paragraph, with content as paragraph title.
+	This get printed somewhere in the PDF. Hiding this
+*/
+body > div:last-child {
+	display: none;
 }
 
+.labelBtn {
+  display: none !important;
+}
+
+/*
+	displayNavBar is the class associated with top navbar
+	Hiding the bar during print operation
+*/
+.displayNavBar {
+  display: none !important;
+}
 .new_h3 {
   margin-left: 220px;
   top: 0;
@@ -29,6 +44,11 @@ body {
 .noteAction {
   border: 1px solid #3071a9;
   box-shadow: none;
+  position: absolute;
+}
+
+.noteAction .pull-right {
+	display: none;
 }
 
 .control {

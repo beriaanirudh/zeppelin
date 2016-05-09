@@ -166,6 +166,10 @@ angular.module('zeppelinWebApp').controller('NotebookCtrl',
     SaveAsService.SaveAs(jsonContent, $scope.note.name, 'json');
   };
 
+  $scope.exportNotebookAsPdf = function() {
+    $window.print();
+  };
+
   //Clone note
   $scope.cloneNote = function(noteId) {
     BootstrapDialog.confirm({
