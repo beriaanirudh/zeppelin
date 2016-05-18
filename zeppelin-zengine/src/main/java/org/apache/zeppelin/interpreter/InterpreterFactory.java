@@ -324,6 +324,18 @@ public class InterpreterFactory implements InterpreterGroupFactory {
           setting.getDependencies(),
           setting.getOption());
 
+      // This qubole change should be discarded 0.7.0 onwards since it is fixed there.
+      try {
+        List<Dependency> dependencies = intpSetting.getDependencies();
+        if (dependencies != null && dependencies.size() > 0) {
+          logger.info("Loading dependencies for " + "interpreter setting " + setting.getName());
+          loadInterpreterDependencies(intpSetting);
+        }
+      } catch (RepositoryException e) {
+        logger.error("Failed to load dependencies for interpretersetting "
+              + intpSetting.getName(), e);
+      }
+
       intpSetting.setInterpreterGroupFactory(this);
       interpreterSettings.put(k, intpSetting);
     }
