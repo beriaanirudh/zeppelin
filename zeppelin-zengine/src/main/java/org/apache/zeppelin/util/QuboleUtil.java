@@ -15,6 +15,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.zeppelin.conf.ZeppelinConfiguration;
@@ -51,6 +54,7 @@ public class QuboleUtil {
   public static final String JOBSERVER = "JobServer";
   public static final String INTERPRETER_SETTINGS = "interpreterSettings";
   public static final String PROPERTIES = "properties";
+  private static final ExecutorService s3Executor = Executors.newFixedThreadPool(5);
 
   /**
    * make opsapi call to qubole rails tier to convey creation of new note
@@ -354,5 +358,28 @@ public class QuboleUtil {
       }
     }
     return note;
+  }
+
+  public static String getNotebookDir() {
+    return zepConfig.getNotebookDir();
+  }
+
+  public static void syncNotesToS3() {
+    try {
+      s3Executor.execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            Process process = Runtime.getRuntime().exec(
+                "/usr/lib/zeppelin/hustler/sync-notes-concurrent.sh");
+            process.waitFor();
+          } catch (IOException | InterruptedException e) {
+            LOG.error("Error while syncing notes to S3: " + e.getMessage());
+          }
+        }
+      });
+    } catch (RejectedExecutionException | NullPointerException e) {
+      LOG.info("Syncing notes to S3 failed: " + e.getMessage());
+    }
   }
 }

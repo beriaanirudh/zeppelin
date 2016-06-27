@@ -17,7 +17,9 @@
 
 package org.apache.zeppelin.rest;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.*;
 
 import javax.ws.rs.DELETE;
@@ -75,8 +77,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.GsonBuilder;
-import com.google.gson.stream.JsonReader;
-import java.io.StringReader;
+
 /**
  * Rest api endpoint for the noteBook.
  */
@@ -277,6 +278,13 @@ public class NotebookRestApi {
     return new JsonResponse(Status.OK, "", exportJson).build();
   }
 
+  @GET
+  @Path("note/fetch/{noteId}")
+  public Response fetchForCommit(@Context HttpServletRequest request,
+      @PathParam("noteId") String noteId) {
+    return QuboleServerHelper.fetchForCommit(notebook, noteId);
+  }
+
   /**
    * import new note REST API
    * 
@@ -327,6 +335,13 @@ public class NotebookRestApi {
     notebookServer.broadcastNote(note);
     notebookServer.broadcastNoteList(subject);
     return new JsonResponse<>(Status.CREATED, "", note.getId() ).build();
+  }
+
+  @PUT
+  @Path("note/checkout/{noteId}")
+  public Response checkout(@Context HttpServletRequest request,
+      @PathParam("noteId") String noteId, String data) {
+    return QuboleServerHelper.checkout(notebook, noteId, data);
   }
 
   /**
@@ -967,4 +982,5 @@ public class NotebookRestApi {
     JsonResponse<String> jsonResponse = new JsonResponse<String>(Status.OK);
     return jsonResponse.build();
   }
+
 }

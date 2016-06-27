@@ -355,7 +355,7 @@ angular.module('zeppelinWebApp').controller('NotebookCtrl',
   };
 
   /** update the current note */
-  $scope.$on('setNoteContent', function(event, note) {
+  $scope.$on('setNoteContent', function(event, note, userId, force) {
     $scope.paragraphUrl = $routeParams.paragraphId;
     $scope.asIframe = $routeParams.asIframe;
     if ($scope.paragraphUrl) {
@@ -363,7 +363,7 @@ angular.module('zeppelinWebApp').controller('NotebookCtrl',
       $rootScope.$broadcast('setIframe', $scope.asIframe);
     }
 
-    if ($scope.note === null) {
+    if ($scope.note === null || force === true) {
       $scope.note = note;
     } else {
       updateNote(note);

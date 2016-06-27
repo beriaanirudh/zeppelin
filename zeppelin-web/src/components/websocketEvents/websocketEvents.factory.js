@@ -54,7 +54,8 @@ angular.module('zeppelinWebApp').factory('websocketEvents', function($rootScope,
     var op = payload.op;
     var data = payload.data;
     if (op === 'NOTE') {
-      $rootScope.$broadcast('setNoteContent', data.note);
+      var force = (data.force !== null && data.force === true);
+      $rootScope.$broadcast('setNoteContent', data.note, data.userid, force);
     } else if (op === 'NEW_NOTE') {
       $location.path('notebook/' + data.note.id);
     } else if (op === 'NOTES_INFO') {

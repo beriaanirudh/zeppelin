@@ -403,6 +403,18 @@ public class NotebookServer extends WebSocketServlet implements
     broadcast(note.id(), new Message(OP.NOTE).put("note", note));
   }
 
+  /* Zeppelin has it's own logic of refreshing a note
+   * in which only 1 paragraph is edited at a time. But while
+   * checking out a notebook from github, we need to replace
+   * all the contents of a notebook with the one got from github.
+   * This method uses sends additional 'force' flag to javascript
+   * which does a complete notebook refresh.
+   */
+  public void broadcastNote(Note note, Boolean force) {
+    broadcast(note.id(), new Message(OP.NOTE).put("note", note)
+        .put("force", true));
+  }
+
   public void broadcastNoteList(AuthenticationInfo subject) {
     List<Map<String, String>> notesInfo = generateNotebooksInfo(false, subject);
     broadcastAll(new Message(OP.NOTES_INFO).put("notes", notesInfo));

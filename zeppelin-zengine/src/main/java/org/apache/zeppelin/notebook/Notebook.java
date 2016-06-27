@@ -335,7 +335,7 @@ public class Notebook {
   }
 
   @SuppressWarnings("rawtypes")
-  private Note loadNoteFromRepo(String id, AuthenticationInfo subject) throws IOException {
+  public Note loadNoteFromRepo(String id, AuthenticationInfo subject) throws IOException {
     Note note = null;
     try {
       note = notebookRepo.get(id, subject);
