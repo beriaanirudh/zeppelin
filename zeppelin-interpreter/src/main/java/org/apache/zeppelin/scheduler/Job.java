@@ -168,6 +168,10 @@ public abstract class Job {
     return this.status.isRunning();
   }
 
+  public boolean isPending() {
+    return this.status.isPending();
+  }
+
   public void run() {
     JobProgressPoller progressUpdator = null;
     try {

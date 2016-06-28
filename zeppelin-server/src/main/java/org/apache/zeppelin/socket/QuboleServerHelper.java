@@ -11,6 +11,7 @@ import javax.ws.rs.core.Response.Status;
 
 import org.apache.zeppelin.notebook.Note;
 import org.apache.zeppelin.notebook.Notebook;
+import org.apache.zeppelin.notebook.Paragraph;
 import org.apache.zeppelin.server.JsonResponse;
 import org.apache.zeppelin.server.ZeppelinServer;
 import org.apache.zeppelin.util.QuboleUtil;
@@ -49,7 +50,11 @@ public class QuboleServerHelper {
    * consistent in using Gson's pretty
    * printing like checkout().
    */
-  public static Response fetchForCommit(Notebook notebook, String noteId) { 
+  public static Response fetchForCommit(Notebook notebook, String noteId) {
+    if (isNoteRunning(notebook, noteId)) {
+      return new JsonResponse<>(Status.FORBIDDEN,
+          "Cannot commit while notebook is running").build();
+    }
     Note note = notebook.getNote(noteId);
     if (note == null) {
       LOG.error("Note=" + noteId + " not found while fetching for commit");
@@ -69,6 +74,11 @@ public class QuboleServerHelper {
    * all notes are updated to the latest content.
    */
   public static Response checkout(Notebook notebook, String noteId, String data) {
+    if (isNoteRunning(notebook, noteId)) {
+      return new JsonResponse<>(Status.FORBIDDEN,
+          "Cannot re-store while notebook is running").build();
+    }
+
     Gson gson = new GsonBuilder().setPrettyPrinting().create();
     Map<Object, Object> noteMap;
 
@@ -127,4 +137,15 @@ public class QuboleServerHelper {
     return new JsonResponse<>(Status.OK).build();
 
   }
+
+  private static boolean isNoteRunning(Notebook notebook, String noteId) {
+    Note note = notebook.getNote(noteId);
+    for (Paragraph paragraph: note.getParagraphs()) {
+      if (paragraph.isRunning() || paragraph.isPending()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
 }
