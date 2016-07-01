@@ -9,9 +9,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.apache.zeppelin.events.QuboleEventsEnum.EVENTTYPE;
 import org.apache.zeppelin.notebook.Note;
 import org.apache.zeppelin.notebook.Notebook;
 import org.apache.zeppelin.notebook.Paragraph;
+import org.apache.zeppelin.rest.message.NewParagraphRunRequest;
 import org.apache.zeppelin.server.JsonResponse;
 import org.apache.zeppelin.server.ZeppelinServer;
 import org.apache.zeppelin.util.QuboleUtil;
@@ -20,6 +22,8 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 /** 
  * Qubole Helper 
@@ -138,6 +142,44 @@ public class QuboleServerHelper {
 
   }
 
+  /**
+   * This API is called by spark-sql driver to
+   * send qlog. The qlog is sent to middleware via
+   * 'events' API. This is done in addition
+   * because we want qlog present in middleware as
+   * soon as possible.
+   */
+  public static Response receiveAndSendQlog(String req, Notebook notebook) {
+    JsonParser jsonParser = new JsonParser();
+    JsonObject jsonObject = (JsonObject) jsonParser.parse(req);
+
+    String noteId = jsonObject.get("noteId").getAsString();
+    String paragraphId = jsonObject.get("paragraphId").getAsString();
+    Note note = notebook.getNote(noteId);
+    Paragraph paragraph = note.getParagraph(paragraphId);
+    Integer queryHistId = paragraph.getQueryHistId();
+    if (queryHistId != null) {
+      JsonObject sendJson = new JsonObject();
+      sendJson.addProperty("event_type", EVENTTYPE.SAVE_QLOG.toString());
+      sendJson.add("qlog", jsonObject.get("qlog"));
+      sendJson.addProperty("query_hist_id", queryHistId);
+
+      LOG.info("Sending qlog for queryHistId = " + queryHistId + " and paragraphId = "
+          + paragraphId + " to middleware in async thread");
+      QuboleUtil.sendEventAsync(sendJson.toString(), 4);
+    }
+    return new JsonResponse<>(Status.OK).build();
+  }
+
+  public static void setQueryHistInParagraph(NewParagraphRunRequest request, Paragraph p,
+      String noteId) {
+    if (request.getQueryHistId() != null) {
+      LOG.info("Storing queryHistId = " + request.getQueryHistId() +
+          " in paragraph = " + p.getId() + " of note = " + noteId);
+      p.setQueryHistId(request.getQueryHistId());
+    }
+  }
+
   private static boolean isNoteRunning(Notebook notebook, String noteId) {
     Note note = notebook.getNote(noteId);
     for (Paragraph paragraph: note.getParagraphs()) {
@@ -147,5 +189,4 @@ public class QuboleServerHelper {
     }
     return false;
   }
-
 }

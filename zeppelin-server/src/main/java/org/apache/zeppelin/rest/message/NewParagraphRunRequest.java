@@ -10,6 +10,7 @@ import java.util.Map;
 public class NewParagraphRunRequest {
   String paragraph;
   String title = "";
+  Integer queryHistId;
   Map<String, Object> params = new HashMap<>();
   Map<String, Object> config = new HashMap<>();
 
@@ -19,6 +20,10 @@ public class NewParagraphRunRequest {
 
   public String getParagraph() {
     return paragraph;
+  }
+
+  public Integer getQueryHistId() {
+    return queryHistId;
   }
 
   public String getTitle() {

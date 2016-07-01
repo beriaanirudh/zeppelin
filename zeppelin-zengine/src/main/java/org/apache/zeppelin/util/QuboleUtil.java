@@ -54,6 +54,7 @@ public class QuboleUtil {
   public static final String JOBSERVER = "JobServer";
   public static final String INTERPRETER_SETTINGS = "interpreterSettings";
   public static final String PROPERTIES = "properties";
+  private static final ExecutorService executorService =  Executors.newFixedThreadPool(5);
   private static final ExecutorService s3Executor = Executors.newFixedThreadPool(5);
 
   /**
@@ -101,11 +102,30 @@ public class QuboleUtil {
   /**
    * send events to web tier
    */
-  public static HttpURLConnection sendEvent(String event) {
+  public static void sendEventAsync(final String event, final int numRetries) {
+    executorService.execute(new Runnable() {
+      @Override
+      public void run() {
+        QuboleUtil.sendEvent(event, numRetries);
+      }
+    });
+  }
+
+  /**
+   * send events to web tier with numRetries # retries
+   */
+  public static HttpURLConnection sendEvent(String event, int numRetries) {
     String apiPath = opsApiPath + "/events/";
     Map<String, String> params = new HashMap<String, String>();
     params.put("event", event);
-    return sendRequestToQuboleRails(apiPath, params, "POST", 1);
+    return sendRequestToQuboleRails(apiPath, params, "POST", numRetries);
+  }
+
+  /**
+   * send events to web tier
+   */
+  public static HttpURLConnection sendEvent(String event) {
+    return sendEvent(event, 1);
   }
 
   private static HttpURLConnection sendRequestToQuboleRails(String apiPath,

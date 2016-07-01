@@ -56,12 +56,18 @@ public class Paragraph extends Job implements Serializable, Cloneable {
   private transient String effectiveText;
   //This is the primary key in the zeppelin_events table
   private transient QuboleParaEventIdObject qbolStartParagraphEventId;
-
+  private static final String SEND_QLOG = "sendQlog";
 
   String title;
   String text;
   String user;
   Date dateUpdated;
+  /* Making queryHistId transient since we
+   * donot want it to appear in note.json. This
+   * will be consumed in-memory while sending back qlog
+   * to middleware.
+   */
+  private transient Integer queryHistId;
   private Map<String, Object> config; // paragraph configs like isOpen, colWidth, etc
   public final GUI settings;          // form and parameter settings
 
@@ -93,6 +99,7 @@ public class Paragraph extends Job implements Serializable, Cloneable {
     title = null;
     text = null;
     authenticationInfo = null;
+    queryHistId = null;
     dateUpdated = null;
     settings = new GUI();
     config = new HashMap<String, Object>();
@@ -101,6 +108,14 @@ public class Paragraph extends Job implements Serializable, Cloneable {
   private static String generateId() {
     return "paragraph_" + System.currentTimeMillis() + "_"
            + new Random(System.currentTimeMillis()).nextInt();
+  }
+
+  public void setQueryHistId(Integer queryHistId) {
+    this.queryHistId = queryHistId;
+  }
+
+  public Integer getQueryHistId() {
+    return this.queryHistId;
   }
 
   public String getText() {
@@ -366,13 +381,17 @@ public class Paragraph extends Job implements Serializable, Cloneable {
       authenticationInfo.setUserCredentials(userCredentials);
     }
 
+    Map<String, Object> configCopy = new HashMap<String, Object>(this.getConfig());
+    if (this.queryHistId != null) {
+      configCopy.put(SEND_QLOG, true);
+    }
     InterpreterContext interpreterContext = new InterpreterContext(
             note.id(),
             getId(),
             this.getTitle(),
             this.getText(),
             this.getAuthenticationInfo(),
-            this.getConfig(),
+            configCopy,
             this.settings,
             registry,
             resourcePool,

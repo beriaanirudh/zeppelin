@@ -851,6 +851,7 @@ public class NotebookRestApi {
     p.setText(text);
     p.setTitle(request.getTitle());
     p.setConfig(request.getConfig());
+    QuboleServerHelper.setQueryHistInParagraph(request, p, noteId);
     p.settings.setParams(request.getParams());
 
     try {
@@ -981,6 +982,12 @@ public class NotebookRestApi {
 
     JsonResponse<String> jsonResponse = new JsonResponse<String>(Status.OK);
     return jsonResponse.build();
+  }
+
+  @PUT
+  @Path("qlog")
+  public Response receiveAndSendQlog(String req) throws IOException {
+    return QuboleServerHelper.receiveAndSendQlog(req, notebook);
   }
 
 }

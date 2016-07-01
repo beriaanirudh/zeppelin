@@ -45,6 +45,8 @@ import org.apache.zeppelin.spark.dep.SparkDependencyResolver;
 import org.apache.zeppelin.resource.Resource;
 import org.apache.zeppelin.resource.ResourcePool;
 import org.apache.zeppelin.resource.ResourceSet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import scala.Tuple2;
 import scala.Unit;
@@ -54,6 +56,7 @@ import scala.Unit;
  */
 public class ZeppelinContext {
   private SparkDependencyResolver dep;
+  private static final Logger LOG = LoggerFactory.getLogger(ZeppelinContext.class);
   private InterpreterContext interpreterContext;
   private int maxResult;
   private List<Class> supportedClasses;
@@ -205,6 +208,8 @@ public class ZeppelinContext {
     String jobGroup = "zeppelin-" + interpreterContext.getParagraphId();
     sc.setJobGroup(jobGroup, "Zeppelin", false);
 
+    Qlog.checkAndSendQlog(interpreterContext, df);
+
     try {
       // convert it to DataFrame if it is Dataset, as we will iterate all the records
       // and assume it is type Row.
@@ -245,6 +250,11 @@ public class ZeppelinContext {
     String trim = msg.toString().trim();
     msg = new StringBuilder(trim);
     msg.append("\n");
+
+    if (Qlog.isJobServerQuery(interpreterContext)) {
+      LOG.info("Job server query. Not adding column names to result");
+      msg = new StringBuilder();
+    }
 
     // ArrayType, BinaryType, BooleanType, ByteType, DecimalType, DoubleType, DynamicType,
     // FloatType, FractionalType, IntegerType, IntegralType, LongType, MapType, NativeType,
