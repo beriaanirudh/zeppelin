@@ -110,7 +110,8 @@ public class QuboleServerHelper {
 
     } catch (Exception e) {
       LOG.error("Error while parsing json during checkout: " + e.getMessage());
-      return new JsonResponse<>(Status.BAD_REQUEST).build();
+      return new JsonResponse<>(Status.BAD_REQUEST,
+          "Checked-out file has invalid json").build();
     }
 
     String notebookDir = QuboleUtil.getNotebookDir();
