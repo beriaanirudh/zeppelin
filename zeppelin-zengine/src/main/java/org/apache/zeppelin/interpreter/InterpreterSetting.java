@@ -44,6 +44,9 @@ public class InterpreterSetting {
   private List<InterpreterInfo> interpreterGroup;
   private transient Map<String, InterpreterGroup> interpreterGroupRef =
       new HashMap<String, InterpreterGroup>();
+  private Status status;
+  private String errorReason;
+
   private List<Dependency> dependencies;
   private InterpreterOption option;
 
@@ -62,6 +65,7 @@ public class InterpreterSetting {
     this.dependencies = dependencies;
     this.option = option;
     this.interpreterGroupFactory = interpreterGroupFactory;
+    this.status = Status.READY;
   }
 
   public InterpreterSetting(String name,
@@ -224,5 +228,30 @@ public class InterpreterSetting {
 
   public Map<String, String> getInfos() {
     return infos;
+  }
+
+  /***
+   * Interpreter status
+   */
+  public enum Status {
+    DOWNLOADING_DEPENDENCIES,
+    ERROR,
+    READY
+  }
+
+  public Status getStatus() {
+    return status;
+  }
+
+  public void setStatus(Status status) {
+    this.status = status;
+  }
+
+  public String getErrorReason() {
+    return errorReason;
+  }
+
+  public void setErrorReason(String errorReason) {
+    this.errorReason = errorReason;
   }
 }

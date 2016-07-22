@@ -325,18 +325,14 @@ public class InterpreterFactory implements InterpreterGroupFactory {
           setting.getOption());
 
       // This qubole change should be discarded 0.7.0 onwards since it is fixed there.
-      try {
-        List<Dependency> dependencies = intpSetting.getDependencies();
-        if (dependencies != null && dependencies.size() > 0) {
-          logger.info("Loading dependencies for " + "interpreter setting " + setting.getName());
-          loadInterpreterDependencies(intpSetting);
-        }
-      } catch (RepositoryException e) {
-        logger.error("Failed to load dependencies for interpretersetting "
-              + intpSetting.getName(), e);
+      List<Dependency> dependencies = intpSetting.getDependencies();
+      if (dependencies != null && dependencies.size() > 0) {
+        logger.info("Loading dependencies for " + "interpreter setting " + setting.getName());
+        loadInterpreterDependencies(intpSetting);
       }
 
       intpSetting.setInterpreterGroupFactory(this);
+      loadInterpreterDependencies(intpSetting);
       interpreterSettings.put(k, intpSetting);
     }
 
@@ -351,34 +347,52 @@ public class InterpreterFactory implements InterpreterGroupFactory {
     }
   }
 
-  private void loadInterpreterDependencies(InterpreterSetting intSetting)
-      throws IOException, RepositoryException {
-    // dependencies to prevent library conflict
-    File localRepoDir = new File(conf.getInterpreterLocalRepoPath() + "/" + intSetting.id());
-    if (localRepoDir.exists()) {
-      FileUtils.cleanDirectory(localRepoDir);
-    }
+  private void loadInterpreterDependencies(final InterpreterSetting setting) {
 
-    // load dependencies
-    List<Dependency> deps = intSetting.getDependencies();
-    if (deps != null) {
-      for (Dependency d: deps) {
-        File destDir = new File(conf.getRelativeDir(ConfVars.ZEPPELIN_DEP_LOCALREPO));
+    setting.setStatus(InterpreterSetting.Status.DOWNLOADING_DEPENDENCIES);
+    interpreterSettings.put(setting.id(), setting);
+    synchronized (interpreterSettings) {
+      final Thread t = new Thread() {
+        public void run() {
+          try {
+            // dependencies to prevent library conflict
+            File localRepoDir = new File(conf.getInterpreterLocalRepoPath() + "/" +
+                setting.id());
+            if (localRepoDir.exists()) {
+              FileUtils.cleanDirectory(localRepoDir);
+            }
+            // load dependencies
+            List<Dependency> deps = setting.getDependencies();
+            if (deps != null) {
+              for (Dependency d : deps) {
+                File destDir = new File(conf.getRelativeDir(ConfVars.ZEPPELIN_DEP_LOCALREPO));
 
-        if (d.getExclusions() != null) {
-          depResolver.load(
-              d.getGroupArtifactVersion(),
-              d.getExclusions(),
-              new File(destDir, intSetting.id()));
-        } else {
-          depResolver.load(
-              d.getGroupArtifactVersion(),
-              new File(destDir, intSetting.id()));
+                if (d.getExclusions() != null) {
+                  depResolver.load(d.getGroupArtifactVersion(), d.getExclusions(),
+                      new File(destDir, setting.id()));
+                } else {
+                  depResolver.load(d.getGroupArtifactVersion(), new File(destDir, setting.id()));
+                }
+              }
+            }
+
+            setting.setStatus(InterpreterSetting.Status.READY);
+          } catch (Exception e) {
+            logger.error(String.format("Error while downloading repos for interpreter group : %s," +
+                    " go to interpreter setting page click on edit and save it again to make " +
+                    "this interpreter work properly.",
+                setting.getGroup()), e);
+            setting.setErrorReason(e.getLocalizedMessage());
+            setting.setStatus(InterpreterSetting.Status.ERROR);
+          } finally {
+            interpreterSettings.put(setting.id(), setting);
+          }
         }
-      }
+      };
+      t.start();
     }
   }
-
+  
   /**
    * Overwrite dependency jar under local-repo/{interpreterId}
    * if jar file in original path is changed
@@ -482,16 +496,13 @@ public class InterpreterFactory implements InterpreterGroupFactory {
    * @param name user defined name
    * @param groupName interpreter group name to instantiate
    * @param properties
-   * @return
-   * @throws InterpreterException
    * @throws IOException
+   * @return
    */
   public InterpreterSetting add(String name, String groupName,
       List<Dependency> dependencies,
-      InterpreterOption option, Properties properties)
-      throws InterpreterException, IOException, RepositoryException {
+      InterpreterOption option, Properties properties) throws IOException {
     synchronized (interpreterSettings) {
-
       List<InterpreterSetting.InterpreterInfo> interpreterInfos =
           new LinkedList<InterpreterSetting.InterpreterInfo>();
 
@@ -778,7 +789,7 @@ public class InterpreterFactory implements InterpreterGroupFactory {
   public void setPropertyAndRestart(String id,
       InterpreterOption option,
       Properties properties,
-      List<Dependency> dependencies) throws IOException, RepositoryException {
+      List<Dependency> dependencies) throws IOException {
     synchronized (interpreterSettings) {
       InterpreterSetting intpsetting = interpreterSettings.get(id);
       if (intpsetting != null) {
