@@ -85,6 +85,7 @@ import com.google.gson.GsonBuilder;
 @Produces("application/json")
 public class NotebookRestApi {
   private static final Logger LOG = LoggerFactory.getLogger(NotebookRestApi.class);
+
   Gson gson = new Gson();
   private Notebook notebook;
   private NotebookServer notebookServer;
@@ -280,9 +281,9 @@ public class NotebookRestApi {
 
   @GET
   @Path("note/fetch/{noteId}")
-  public Response fetchForCommit(@Context HttpServletRequest request,
+  public Response fetch(@Context HttpServletRequest request,
       @PathParam("noteId") String noteId) {
-    return QuboleServerHelper.fetchForCommit(notebook, noteId);
+    return QuboleServerHelper.fetch(request, notebook, noteId);
   }
 
   /**

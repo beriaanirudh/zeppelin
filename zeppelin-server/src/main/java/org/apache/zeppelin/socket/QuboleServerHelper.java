@@ -6,6 +6,7 @@ import java.io.PrintWriter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
@@ -33,6 +34,9 @@ public class QuboleServerHelper {
   private static final Map<NotebookSocket, String> socketToUserIdMap = new ConcurrentHashMap<>();
   public static final String QBOL_USER_ID = "qboluserid";
   public static final String CRON_EXECUTING_USER = "cronExecutingUser";
+  private static final String HEADER_FETCH_KEY = "Qubole-Operation";
+  private static final String COMMIT_OPERATION = "commit";
+
   private static final Logger LOG = LoggerFactory.getLogger(QuboleServerHelper.class);
 
   public static void addConnToUserMapping(NotebookSocket conn) {
@@ -48,20 +52,22 @@ public class QuboleServerHelper {
   }
 
   /**
-   * Fetch the note for commiting
-   * to github. This API is similar to
-   * getNote(). This API is used to be
-   * consistent in using Gson's pretty
-   * printing like checkout().
+   * Fetch the note for commit / import. This API is
+   * similar to getNote(), the differences are:
+   * 1. Syncs note to S3.
+   * 2. Uses Gson's pretty printing to write files.
+   * 3. Checks for valid state before commit.
    */
-  public static Response fetchForCommit(Notebook notebook, String noteId) {
-    if (isNoteRunning(notebook, noteId)) {
-      return new JsonResponse<>(Status.FORBIDDEN,
-          "Cannot commit while notebook is running").build();
+  public static Response fetch(HttpServletRequest request,
+      Notebook notebook, String noteId) {
+    String denyCommitMessage = noteValidForCommit(request, notebook, noteId);
+
+    if (denyCommitMessage != null) {
+      return new JsonResponse<>(Status.FORBIDDEN, denyCommitMessage).build();
     }
     Note note = notebook.getNote(noteId);
     if (note == null) {
-      LOG.error("Note=" + noteId + " not found while fetching for commit");
+      LOG.error("Note=" + noteId + " not found.");
       return new JsonResponse<>(Status.NOT_FOUND, "Note not found").build();
     }
     Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -190,4 +196,19 @@ public class QuboleServerHelper {
     }
     return false;
   }
+
+  private static String noteValidForCommit(HttpServletRequest request,
+      Notebook notebook, String noteId) {
+
+    if (!COMMIT_OPERATION.equals(request.getHeader(HEADER_FETCH_KEY))) {
+      return null;
+    }
+
+    if (isNoteRunning(notebook, noteId)) {
+      return "Cannot commit while notebook is running";
+    }
+
+    return null;
+  }
+
 }
