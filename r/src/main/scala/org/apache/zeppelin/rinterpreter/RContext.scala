@@ -294,6 +294,7 @@ object RContext {
         // Find rzeppelin
         val libpath : String = if (Files.exists(Paths.get("R/lib"))) "R/lib"
         else if (Files.exists(Paths.get("../R/lib"))) "../R/lib"
+        else if (Files.exists(Paths.get("/usr/lib/zeppelin/R/lib"))) "/usr/lib/zeppelin/R/lib"
         else throw new RuntimeException("Could not find rzeppelin - it must be in either R/lib or ../R/lib")
         val snippet =
           s"""
