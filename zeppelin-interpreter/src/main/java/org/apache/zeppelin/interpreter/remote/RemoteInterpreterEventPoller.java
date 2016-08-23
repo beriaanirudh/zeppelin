@@ -40,12 +40,18 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Processes message from RemoteInterpreter process
  */
 public class RemoteInterpreterEventPoller extends Thread {
   private static final Logger logger = LoggerFactory.getLogger(RemoteInterpreterEventPoller.class);
+  private static final ScheduledExecutorService appendService =
+      Executors.newSingleThreadScheduledExecutor();
   private final RemoteInterpreterProcessListener listener;
 
   private volatile boolean shutdown;
@@ -69,6 +75,9 @@ public class RemoteInterpreterEventPoller extends Thread {
   @Override
   public void run() {
     Client client = null;
+    AppendOutputRunner runner = new AppendOutputRunner(listener);
+    ScheduledFuture<?> appendFuture = appendService.scheduleWithFixedDelay(
+        runner, 0, AppendOutputRunner.BUFFER_TIME_MS, TimeUnit.MILLISECONDS);
 
     while (!shutdown && interpreterProcess.isRunning()) {
       try {
@@ -142,7 +151,7 @@ public class RemoteInterpreterEventPoller extends Thread {
           String paragraphId = outputAppend.get("paragraphId");
           String outputToAppend = outputAppend.get("data");
 
-          listener.onOutputAppend(noteId, paragraphId, outputToAppend);
+          runner.appendBuffer(noteId, paragraphId, outputToAppend);
         } else if (event.getType() == RemoteInterpreterEventType.OUTPUT_UPDATE) {
           // on output update
           Map<String, String> outputAppend = gson.fromJson(
@@ -165,6 +174,9 @@ public class RemoteInterpreterEventPoller extends Thread {
       } catch (Exception e) {
         logger.error("Can't handle event " + event, e);
       }
+    }
+    if (appendFuture != null) {
+      appendFuture.cancel(true);
     }
   }
 
