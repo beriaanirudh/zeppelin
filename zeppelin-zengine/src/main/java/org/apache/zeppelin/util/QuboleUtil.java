@@ -1,7 +1,9 @@
 package org.apache.zeppelin.util;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -9,7 +11,10 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -201,6 +206,30 @@ public class QuboleUtil {
     for (int i = 0; i < numRetries; i++) {
       try {
         Process process = Runtime.getRuntime().exec(downloadCmd);
+        String line;
+        final BufferedReader inputStream = new BufferedReader(
+            new InputStreamReader(process.getInputStream()));
+
+        File file = new File("/usr/lib/zeppelin/logs/s3_init.log");
+
+        // if file doesnt exists, then create it
+        if (!file.exists()) {
+          file.createNewFile();
+        }
+
+        FileWriter fw = new FileWriter(file, true);
+        BufferedWriter bw = new BufferedWriter(fw);
+
+        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+        Date date = new Date();
+        bw.write("===========" + dateFormat.format(date) + " Downloading notebooks ========");
+        bw.newLine();
+        while ((line = inputStream.readLine()) != null) {
+          bw.write(line);
+          bw.newLine();
+        }
+        bw.close();
+
         process.waitFor();
         cleanNotesDownloadDirectory(tempDownloadDir);
         if (tempDownloadDir.listFiles().length == noteIds.size()) {
