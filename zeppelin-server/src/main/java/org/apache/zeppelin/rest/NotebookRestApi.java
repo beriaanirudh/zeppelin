@@ -64,6 +64,7 @@ import org.apache.zeppelin.user.AuthenticationInfo;
 import org.apache.zeppelin.utils.SecurityUtils;
 import org.quartz.CronExpression;
 import org.apache.zeppelin.server.ZeppelinServer;
+import org.apache.zeppelin.util.QuboleNoteAttributes;
 import org.apache.zeppelin.util.QuboleUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -908,7 +909,9 @@ public class NotebookRestApi {
       throws IOException {
     Note note = notebook.getNote(noteId);
     if (note == null) {
-      note = notebook.fetchAndLoadNoteFromS3(noteId);
+      Map<String, String> noteAttributes = QuboleNoteAttributes.getNoteAttributesFromJSON(req);
+      note = notebook.fetchAndLoadNoteFromS3(noteId, noteAttributes);
+      QuboleNoteAttributes.setNoteAttributes(note, noteAttributes);
       if (note == null) {
         LOG.error("Associate failed for note " + noteId);
         return new JsonResponse<>(Status.NOT_FOUND).build();

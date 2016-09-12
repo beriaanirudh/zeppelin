@@ -413,6 +413,14 @@ public class ZeppelinConfiguration extends XMLConfiguration {
     return getString(ConfVars.ZEPPELIN_CONF_DIR);
   }
 
+  public int getNotebookSyncFrequency() {
+    return getInt(ConfVars.ZEPPELIN_NOTEBOOK_SYNC_FREQUENCY);
+  }
+
+  public int getInterpreterSyncFrequency() {
+    return getInt(ConfVars.ZEPPELIN_INTERPRETERS_SYNC_FREQUENCY);
+  }
+
   public List<String> getAllowedOrigins()
   {
     if (getString(ConfVars.ZEPPELIN_ALLOWED_ORIGINS).isEmpty()) {
@@ -551,8 +559,9 @@ public class ZeppelinConfiguration extends XMLConfiguration {
     ZEPPELIN_ANONYMOUS_ALLOWED("zeppelin.anonymous.allowed", true),
     ZEPPELIN_CREDENTIALS_PERSIST("zeppelin.credentials.persist", true),
     ZEPPELIN_WEBSOCKET_MAX_TEXT_MESSAGE_SIZE("zeppelin.websocket.max.text.message.size", "1024000"),
-    ZEPPELIN_USE_JDBC_ALIAS("zeppelin.use.jdbc.alias", true);
-
+    ZEPPELIN_USE_JDBC_ALIAS("zeppelin.use.jdbc.alias", true),
+    ZEPPELIN_NOTEBOOK_SYNC_FREQUENCY("zeppelin.notebooks.sync.frequency", 120000),
+    ZEPPELIN_INTERPRETERS_SYNC_FREQUENCY("zeppelin.interpreters.sync.frequency", 600000);
 
     private String varName;
     @SuppressWarnings("rawtypes")

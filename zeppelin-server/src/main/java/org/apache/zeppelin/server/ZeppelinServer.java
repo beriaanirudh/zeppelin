@@ -40,8 +40,12 @@ import org.eclipse.jetty.server.AbstractConnector;
 import org.apache.zeppelin.util.QuboleUtil;
 import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.HttpConfiguration;
+import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.servlet.DefaultServlet;
@@ -98,9 +102,10 @@ public class ZeppelinServer extends Application {
       // synchronous call to populate the notes
       QuboleUtil.initNoteBook();
     } catch (Exception e) {
-      LOG.info("Exception occured" + e.getMessage());
+      LOG.error("s3ops Exception occured " + e.getMessage());
     }
-    notebook.loadAllNotes();
+
+    QuboleUtil.initNoteBookSync(conf);
   }
 
   public static void main(String[] args) throws InterruptedException {
@@ -140,6 +145,8 @@ public class ZeppelinServer extends Application {
         LOG.info("Shutting down Zeppelin Server ... ");
         QuboleEventUtils.saveEvent(EVENTTYPE.SERVER_STOP, null);
         try {
+          QuboleUtil.syncNotesToS3();
+          QuboleUtil.putInterpretersToS3();
           jettyWebServer.stop();
           notebook.getInterpreterFactory().close();
           notebook.close();

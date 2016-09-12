@@ -49,5 +49,15 @@
   <value>org.apache.zeppelin.spark.SparkInterpreter,org.apache.zeppelin.spark.PySparkInterpreter,org.apache.zeppelin.spark.SparkSqlInterpreter,org.apache.zeppelin.spark.DepInterpreter,org.apache.zeppelin.markdown.Markdown,org.apache.zeppelin.shell.ShellInterpreter</value>
   <description>Comma separated interpreter configurations. First interpreter become a default</description>
 </property>
+<property>
+  <name>zeppelin.notebooks.sync.frequency</name>
+  <value>120000</value>
+  <description>Frequency at which notebooks should be synced, in milliseconds</description>
+</property>
 
+<property>
+  <name>zeppelin.interpreters.sync.frequency</name>
+  <value>600000</value>
+  <description>Frequency at which interpreters should be synced, in milliseconds</description>
+</property>
 </configuration>

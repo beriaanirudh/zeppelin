@@ -49,6 +49,7 @@ import org.apache.zeppelin.search.SearchService;
 import com.google.gson.Gson;
 import org.apache.zeppelin.user.AuthenticationInfo;
 import org.apache.zeppelin.user.Credentials;
+import org.apache.zeppelin.util.QuboleNoteAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,6 +82,16 @@ public class Note implements Serializable, JobListener {
   private transient NotebookRepo repo;
   private transient SearchService index;
   private transient ScheduledFuture delayedPersist;
+  private transient QuboleNoteAttributes quboleNoteAttributes;
+
+  public QuboleNoteAttributes getQuboleNoteAttributes() {
+    return quboleNoteAttributes;
+  }
+
+  public void setQuboleNoteAttributes(QuboleNoteAttributes quboleNoteAttributes) {
+    this.quboleNoteAttributes = quboleNoteAttributes;
+  }
+
   private transient Credentials credentials;
 
   /**

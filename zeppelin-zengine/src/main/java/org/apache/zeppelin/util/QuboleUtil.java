@@ -11,6 +11,8 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -20,14 +22,22 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.zeppelin.conf.ZeppelinConfiguration;
 import org.apache.zeppelin.notebook.Note;
 import org.apache.zeppelin.notebook.Notebook;
+import org.apache.zeppelin.notebook.Notebook.CronJob;
+import org.apache.zeppelin.s3.S3Command;
+import org.apache.zeppelin.s3.S3CommandManager;
+import org.apache.zeppelin.s3.S3OperationsEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,8 +60,9 @@ public class QuboleUtil {
   private static boolean FEATURE_DISABLED = false; // expose this as env
                                                    // variable??
   private static final String S3Loc = System.getenv("FIRST_CLASS_NOTEBOOK_LOC");
+  private static final String confLoc = System.getenv("INTERPRETER_CONF_LOC");
   private static final String opsApiPath = "/opsapi/v1/zeppelin";
-  private static final String s3cmd = "/usr/bin/s3cmd -c /usr/lib/hustler/s3cfg";
+  private static final String opsApiPathV2 = "/opsapi/v2/zeppelin";
   private static final String clusterId = System.getenv("CLUSTER_ID");
   private static final ZeppelinConfiguration zepConfig = ZeppelinConfiguration.create();
 
@@ -62,6 +73,7 @@ public class QuboleUtil {
   private static final ExecutorService executorService =  Executors.newFixedThreadPool(5);
   private static final ExecutorService s3Executor = Executors.newFixedThreadPool(5);
 
+  public static final String s3cmd = "/usr/bin/s3cmd -c /usr/lib/hustler/s3cfg ";
   /**
    * make opsapi call to qubole rails tier to convey creation of new note
    **/
@@ -162,7 +174,7 @@ public class QuboleUtil {
         }
         int responseCode = connection.getResponseCode();
         if (responseCode == 200) {
-          LOG.info(requestMethod + " request to rails successful");
+          LOG.debug(requestMethod + " request to rails successful");
           return connection;
         } else {
           LOG.info(responseCode + " error in making opsapi call to rails");
@@ -178,13 +190,17 @@ public class QuboleUtil {
   }
 
   private static String getQuboleApiToken() {
-    LOG.info("Api token is: " + quboleApiToken);
+    LOG.debug("Api token is: " + quboleApiToken);
     return quboleApiToken;
   }
 
   private static String getQuboleBaseURL() {
-    LOG.info("Api Base is: " + quboleBaseURL);
+    LOG.debug("Api Base is: " + quboleBaseURL);
     return quboleBaseURL;
+  }
+
+  public static String getInterpreterSyncLocation(){
+    return confLoc;
   }
 
   public static void fetchFromS3(List<String> noteIds) throws IOException {
@@ -251,6 +267,55 @@ public class QuboleUtil {
         : noteBookDir;
     copyNotesToNoteBookDir(new File(noteBookDir), tempDownloadDir);
     includesFile.delete();
+  }
+
+  public static void fetchFromS3Folders(Map<String, Map<String, String>> notesAttributes)
+      throws IOException {
+
+    if (notesAttributes.isEmpty()) {
+      LOG.info("No notes for this cluster");
+      return;
+    }
+
+    List<Future<Integer>> futures = new ArrayList<>();
+    for (String noteId : notesAttributes.keySet()) {
+      Map<String, String> attrMap = notesAttributes.get(noteId);
+      String s3loc = attrMap.get(QuboleNoteAttributes.LOCATION);
+      if (s3loc != null) {
+        Future<Integer> future = getNoteBook(noteId, s3loc);
+        if (future != null){
+          futures.add(future);
+        }
+      }
+    }
+
+    for (Future<Integer> future : futures) {
+      try {
+        future.get();
+      } catch (InterruptedException | ExecutionException e) {
+        LOG.error("s3ops Error occured when fetching notebooks", e);
+      }
+    }
+
+    cleanNotesDownloadDirectory(new File(zepConfig.getNotebookDir()));
+  }
+
+  private static Future<Integer> getNoteBook(String noteId, String s3Loc) {
+    Future<Integer> futureTask = null;
+    Path notePath = Paths.get(zepConfig.getNotebookDir(), noteId, "note.json");
+    File file = new File(notePath.toString());
+    if (!file.exists()) {
+      try {
+        S3CommandManager mgr = S3CommandManager.getInstance();
+        S3Command getCmd = mgr.createCommand(S3OperationsEnum.GET);
+        getCmd.setSource(s3Loc);
+        getCmd.setDestination(notePath.toString());
+        futureTask = mgr.executeCommand(getCmd);
+      } catch (Exception e) {
+        LOG.error("s3ops Error occured when trying to fetch notebook", e);
+      }
+    }
+    return futureTask;
   }
 
   private static File createTempFileWithNoteIds(List<String> noteIds) throws IOException {
@@ -344,17 +409,17 @@ public class QuboleUtil {
       InputStream inputStream = connection.getInputStream();
       BufferedReader bis = new BufferedReader(new InputStreamReader(inputStream));
       String readLine = bis.readLine();
-      JsonObject obj = (JsonObject) new JsonParser().parse(readLine);
-      JsonElement jsonNotes = obj.get("notes");
+      Map<String, Map<String, String> > notesAttributes =
+          QuboleNoteAttributes.extractAttributes(readLine);
 
-      JsonElement parse = new JsonParser().parse(jsonNotes.getAsString());
-      List<String> noteIds = new ArrayList<>();
-      if (parse instanceof JsonArray) {
-        JsonArray arr = (JsonArray) parse;
-        for (int i = 0; i < arr.size(); i++) {
-          JsonElement jsonElement = arr.get(i);
-          String noteId = jsonElement.getAsString();
-          noteIds.add(noteId);
+      List<String> noteIds = new ArrayList<>(notesAttributes.keySet());
+      fetchFromS3Folders(notesAttributes);
+      Notebook notebook = CronJob.notebook;
+      notebook.loadAllNotes();
+      if (notesAttributes != null) {
+        for (String noteId : notesAttributes.keySet()) {
+          QuboleNoteAttributes.setNoteAttributes(notebook.getNote(noteId),
+              notesAttributes.get(noteId));
         }
       }
       fetchFromS3(noteIds);
@@ -398,7 +463,7 @@ public class QuboleUtil {
       // Try to download note from s3 and add here.
       // this can be triggered only from FCN UI
       try {
-        note = notebook.fetchAndLoadNoteFromS3(noteId);
+        note = notebook.fetchAndLoadNoteFromS3(noteId, null);
       } catch (IOException e) {
         LOG.error("Error while fetching and loading note", e);
       }
@@ -414,21 +479,63 @@ public class QuboleUtil {
   }
 
   public static void syncNotesToS3() {
-    try {
-      s3Executor.execute(new Runnable() {
-        @Override
-        public void run() {
-          try {
-            Process process = Runtime.getRuntime().exec(
-                "/usr/lib/zeppelin/hustler/sync-notes-concurrent.sh");
-            process.waitFor();
-          } catch (IOException | InterruptedException e) {
-            LOG.error("Error while syncing notes to S3: " + e.getMessage());
-          }
-        }
-      });
-    } catch (RejectedExecutionException | NullPointerException e) {
-      LOG.info("Syncing notes to S3 failed: " + e.getMessage());
+    syncNotesToS3Folders();
+  }
+
+  public static void syncNotesToS3Folders() {
+    S3CommandManager instance = S3CommandManager.getInstance();
+    List<Note> allNotes = CronJob.notebook.getAllNotes();
+    for (Note note : allNotes) {
+      // noteAttributes will be null for Example notebooks
+      QuboleNoteAttributes noteAttr = note.getQuboleNoteAttributes();
+      if (noteAttr != null && noteAttr.getLocation() != null && !noteAttr.getLocation().isEmpty()) {
+        S3Command syncCommand = instance.createCommand(S3OperationsEnum.SYNC);
+        Path path = Paths.get(QuboleUtil.getNotebookDir(), note.id(), "note.json");
+        syncCommand.setSource(path.toString());
+        syncCommand.setDestination(note.getQuboleNoteAttributes().getLocation());
+        instance.executeCommand(syncCommand);
+      }
     }
+  }
+
+  public static void putInterpretersToS3() {
+    S3CommandManager instance = S3CommandManager.getInstance();
+    S3Command putsCommand = instance.createCommand(S3OperationsEnum.PUT);
+    Path source = Paths.get(CronJob.notebook.getConf().getConfDir(), "interpreter.json");
+    putsCommand.setSource(source.toString());
+    putsCommand.setDestination(QuboleUtil.getInterpreterSyncLocation() + "/interpreter.json");
+    instance.executeCommand(putsCommand);
+  }
+
+  public static void initNoteBookSync(ZeppelinConfiguration conf) {
+    LOG.info("s3ops Using folder based sync in Zeppelin");
+
+    int notebookSyncFrequency = conf.getNotebookSyncFrequency();
+    int interpreterSyncFrequency = conf.getInterpreterSyncFrequency();
+    LOG.info("s3ops Notebook sync frequency: " + notebookSyncFrequency
+        + "\n interpreter frequency: " + interpreterSyncFrequency);
+
+    LOG.info("s3ops Interpreter sync frequency: " + interpreterSyncFrequency);
+
+    ScheduledExecutorService service = Executors.newScheduledThreadPool(5);
+    service.scheduleAtFixedRate(new Runnable() {
+
+      @Override
+      public void run() {
+        try {
+          QuboleUtil.syncNotesToS3Folders();
+        } catch (Exception e) {
+          LOG.error("s3ops", e);
+        }
+      }
+    }, 0, interpreterSyncFrequency, TimeUnit.MILLISECONDS);
+
+    service.scheduleAtFixedRate(new Runnable() {
+
+      @Override
+      public void run() {
+        QuboleUtil.putInterpretersToS3();
+      }
+    }, 0, interpreterSyncFrequency, TimeUnit.MILLISECONDS);
   }
 }

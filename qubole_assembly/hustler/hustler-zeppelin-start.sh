@@ -4,6 +4,7 @@ s3_notebook_conf_backup_loc=`nodeinfo s3_notebook_conf_backup_location`
 s3_first_class_notebook_loc=`nodeinfo s3_first_class_notebook_location`
 qubole_base_url=`nodeinfo qubole_base_url`
 qubole_api_token=`nodeinfo qubole_cluster_api_token`
+sync_enabled=`nodeinfo zeppelin_enable_new_s3_sync`
 
 FILE="/usr/lib/qubole/cloud_info.sh" && [[ -f $FILE ]] && source $FILE
 
