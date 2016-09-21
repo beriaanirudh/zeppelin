@@ -452,6 +452,10 @@ public class ZeppelinConfiguration extends XMLConfiguration {
     return size;
   }
 
+  public int getPersistentInterpreterCheckDelay() {
+    return getInt(ConfVars.ZEPPELIN_PERSISTENT_INTERPRETER_CHECK_DELAY);
+  }
+
   public Map<String, String> dumpConfigurations(ZeppelinConfiguration conf,
                                                 ConfigurationKeyPredicate predicate) {
     Map<String, String> configurations = new HashMap<>();
@@ -577,7 +581,10 @@ public class ZeppelinConfiguration extends XMLConfiguration {
     ZEPPELIN_NOTEBOOK_SYNC_FREQUENCY("zeppelin.notebooks.sync.frequency", 120000),
     ZEPPELIN_INTERPRETERS_SYNC_FREQUENCY("zeppelin.interpreters.sync.frequency", 600000),
     ZEPPELIN_REFRESH_ACLS_BATCH_SIZE("zeppelin.refresh.acl.batch.size", 20),
-    ZEPPELIN_SYNC_POOL_SIZE("zeppelin.sync.poolsize", 10);
+    ZEPPELIN_SYNC_POOL_SIZE("zeppelin.sync.poolsize", 10),
+    ZEPPELIN_PERSISTENT_INTERPRETER_CHECK_DELAY(
+        "zeppelin.persistent.interpreter.check.delay", 10000);
+
     private String varName;
     @SuppressWarnings("rawtypes")
     private Class varClass;

@@ -73,4 +73,10 @@
   <description>Size of batch call to tapp to refresh ACLs. Valid values are from 1, 2 ... 20.</description>
 </property>
 
+<property>
+  <name>zeppelin.persistent.interpreter.check.delay</name>
+  <value>10000</value>
+  <description>Frequency, in milli-seconds, at which zeppelin checks if a persistent interpreter is up</description>
+</property>
+
 </configuration>

@@ -34,7 +34,7 @@ import org.apache.zeppelin.interpreter.InterpreterSetting;
  */
 public class NoteInterpreterLoader {
   private transient InterpreterFactory factory;
-  private static String SHARED_SESSION = "shared_session";
+  public static String SHARED_SESSION = "shared_session";
   String noteId;
 
   public NoteInterpreterLoader(InterpreterFactory factory) {

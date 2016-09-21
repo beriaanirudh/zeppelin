@@ -37,7 +37,10 @@ import org.apache.zeppelin.events.QuboleEventsEnum.EVENTTYPE;
 import org.apache.zeppelin.interpreter.Interpreter;
 import org.apache.zeppelin.interpreter.InterpreterException;
 import org.apache.zeppelin.interpreter.InterpreterGroup;
+import org.apache.zeppelin.interpreter.InterpreterResult.Code;
+import org.apache.zeppelin.interpreter.InterpreterResult.Type;
 import org.apache.zeppelin.interpreter.InterpreterSetting;
+import org.apache.zeppelin.notebook.Notebook.CronJob;
 import org.apache.zeppelin.notebook.repo.NotebookRepo;
 import org.apache.zeppelin.notebook.utility.IdHashes;
 import org.apache.zeppelin.resource.ResourcePoolUtils;
@@ -45,11 +48,13 @@ import org.apache.zeppelin.scheduler.Job;
 import org.apache.zeppelin.scheduler.Job.Status;
 import org.apache.zeppelin.scheduler.JobListener;
 import org.apache.zeppelin.search.SearchService;
+import org.apache.zeppelin.util.PersistentIntpsAndBootstrapNotes;
 
 import com.google.gson.Gson;
 import org.apache.zeppelin.user.AuthenticationInfo;
 import org.apache.zeppelin.user.Credentials;
 import org.apache.zeppelin.util.QuboleNoteAttributes;
+import org.apache.zeppelin.util.QuboleUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,6 +64,8 @@ import org.slf4j.LoggerFactory;
 public class Note implements Serializable, JobListener {
   static Logger logger = LoggerFactory.getLogger(Note.class);
   private static final long serialVersionUID = 7920699076577612429L;
+  private static final String DIFF_INTP_BOOTSTRAP_MSG = "Paragraph not run as a part " +
+      "of bootstrap since it is bound to a diff spark interpreter";
 
   // threadpool for delayed persist of note
   private static final ScheduledThreadPoolExecutor delayedPersistThreadPool =
@@ -432,7 +439,7 @@ public class Note implements Serializable, JobListener {
         authenticationInfo.setUser(cronExecutingUser);
         p.setAuthenticationInfo(authenticationInfo);
         p.setNoteReplLoader(replLoader);
-        run(p.getId());
+        run(p.getId(), cronExecutingUser, QuboleUtil.getEmailForUser(cronExecutingUser), false);
         QuboleEventUtils.saveEvent(EVENTTYPE.PARAGRAPH_EXECUTION_START, cronExecutingUser, p);
       }
     }
@@ -443,11 +450,19 @@ public class Note implements Serializable, JobListener {
    *
    * @param paragraphId
    */
-  public void run(String paragraphId) {
+  public void run(String paragraphId, String userId, String email, boolean bootStrapRun) {
     Paragraph p = getParagraph(paragraphId);
     p.setNoteReplLoader(replLoader);
     p.setListener(jobListenerFactory.getParagraphJobListener(this));
     p.clearRuntimeInfo(null);
+
+    if (!bootStrapRun) {
+      InterpreterSetting setting = getSettingFromInterpreter(
+          replLoader.get(p.getRequiredReplName()));
+      InterpreterFactory intpFactory = CronJob.notebook.getInterpreterFactory();
+      PersistentIntpsAndBootstrapNotes.runBootStrapAndStartIntp(setting, userId, email,
+          intpFactory, CronJob.notebook.getAllNotes());
+    }
     String requiredReplName = p.getRequiredReplName();
     Interpreter intp = replLoader.get(requiredReplName);
     if (intp == null) {
@@ -476,6 +491,10 @@ public class Note implements Serializable, JobListener {
     }
   }
 
+  public void run(String paragraphId, String userId, String email) {
+    run(paragraphId, userId, email, false);
+  }
+
   /**
    * Check whether all paragraphs belongs to this note has terminated
    * @return
@@ -490,6 +509,53 @@ public class Note implements Serializable, JobListener {
     }
 
     return true;
+  }
+
+  public void run(String paragraphId) {
+    logger.warn("Running para without user id");
+    run(paragraphId, null, null);
+  }
+
+  public boolean runParagraphsForBootstrap(InterpreterSetting setting,
+      String userId, String email) {
+    boolean ranParaForInterpreter = false;
+    synchronized (paragraphs) {
+      for (Paragraph p: paragraphs) {
+        InterpreterSetting paraIntpSetting = getSettingFromInterpreter(
+            replLoader.get(p.getRequiredReplName()));
+        if (QuboleUtil.sparkInterpreterGroupName.equals(
+            paraIntpSetting.getGroup())) {
+          if (paraIntpSetting.equals(setting)) {
+            ranParaForInterpreter = true;
+            run(p.getId(), userId, email, true);
+          }
+          //do not run any other spark interpreter
+          else {
+            p.setErrorResultForBootstrap(new InterpreterResult(
+                Code.ERROR, Type.TEXT, DIFF_INTP_BOOTSTRAP_MSG));
+          }
+        } else {
+          run(p.getId(), userId, email, true);
+        }
+      }
+    }
+    return ranParaForInterpreter;
+  }
+
+  private InterpreterSetting getSettingFromInterpreter(Interpreter interpreter) {
+    InterpreterFactory intpFactory = CronJob.notebook.getInterpreterFactory();
+    for (InterpreterSetting setting: intpFactory.get()) {
+      for (InterpreterGroup group: setting.getAllInterpreterGroups()) {
+        for (List<Interpreter> intps: group.values()) {
+          for (Interpreter intp: intps) {
+            if (interpreter.equals(intp)) {
+              return setting;
+            }
+          }
+        }
+      }
+    }
+    return null;
   }
 
   public List<InterpreterCompletion> completion(String paragraphId, String buffer, int cursor) {
