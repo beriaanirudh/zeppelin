@@ -174,4 +174,8 @@ public class LazyOpenInterpreter
     intp.setClassloaderUrls(urls);
   }
 
+  @Override
+  public void openInterpreterProactively() {
+    intp.openInterpreterProactively();
+  }
 }

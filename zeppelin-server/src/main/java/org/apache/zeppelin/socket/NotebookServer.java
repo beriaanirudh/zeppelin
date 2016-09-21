@@ -1155,7 +1155,7 @@ public class NotebookServer extends WebSocketServlet implements
     AuthenticationInfo subject = new AuthenticationInfo(fromMessage.principal);
     note.persist(subject);
     try {
-      note.run(paragraphId);
+      note.run(paragraphId, QuboleUtil.get, email);
       QuboleEventUtils.saveEvent(EVENTTYPE.PARAGRAPH_EXECUTION_START,
           QuboleServerHelper.getUserForConn(conn), p);
     } catch (Exception ex) {

@@ -37,7 +37,10 @@ import org.apache.zeppelin.events.QuboleEventsEnum.EVENTTYPE;
 import org.apache.zeppelin.interpreter.Interpreter;
 import org.apache.zeppelin.interpreter.InterpreterException;
 import org.apache.zeppelin.interpreter.InterpreterGroup;
+import org.apache.zeppelin.interpreter.InterpreterResult.Code;
+import org.apache.zeppelin.interpreter.InterpreterResult.Type;
 import org.apache.zeppelin.interpreter.InterpreterSetting;
+import org.apache.zeppelin.notebook.Notebook.CronJob;
 import org.apache.zeppelin.notebook.repo.NotebookRepo;
 import org.apache.zeppelin.notebook.utility.IdHashes;
 import org.apache.zeppelin.resource.ResourcePoolUtils;
@@ -45,11 +48,13 @@ import org.apache.zeppelin.scheduler.Job;
 import org.apache.zeppelin.scheduler.Job.Status;
 import org.apache.zeppelin.scheduler.JobListener;
 import org.apache.zeppelin.search.SearchService;
+import org.apache.zeppelin.util.PersistentIntpsAndBootstrapNotes;
 
 import com.google.gson.Gson;
 import org.apache.zeppelin.user.AuthenticationInfo;
 import org.apache.zeppelin.user.Credentials;
 import org.apache.zeppelin.util.QuboleNoteAttributes;
+import org.apache.zeppelin.util.QuboleUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,6 +64,8 @@ import org.slf4j.LoggerFactory;
 public class Note implements Serializable, JobListener {
   static Logger logger = LoggerFactory.getLogger(Note.class);
   private static final long serialVersionUID = 7920699076577612429L;
+  private static final String DIFF_INTP_BOOTSTRAP_MSG = "Paragraph not run as a part " +
+      "of bootstrap since it is bound to a diff spark interpreter";
 
   // threadpool for delayed persist of note
   private static final ScheduledThreadPoolExecutor delayedPersistThreadPool =
@@ -432,7 +439,7 @@ public class Note implements Serializable, JobListener {
         authenticationInfo.setUser(cronExecutingUser);
         p.setAuthenticationInfo(authenticationInfo);
         p.setNoteReplLoader(replLoader);
-        run(p.getId());
+        run(p.getId(), cronExecutingUser, QuboleUtil.getEmailForUser(cronExecutingUser), false);
         QuboleEventUtils.saveEvent(EVENTTYPE.PARAGRAPH_EXECUTION_START, cronExecutingUser, p);
       }
     }
@@ -476,6 +483,10 @@ public class Note implements Serializable, JobListener {
     }
   }
 
+  public void run(String paragraphId, String userId, String email) {
+    run(paragraphId, userId, email, false);
+  }
+
   /**
    * Check whether all paragraphs belongs to this note has terminated
    * @return
@@ -490,6 +501,45 @@ public class Note implements Serializable, JobListener {
     }
 
     return true;
+  }
+
+  public void run(String paragraphId) {
+    logger.warn("Running para without user id");
+    run(paragraphId, null, null);
+  }
+
+  public boolean runParagraphsForBootstrap(InterpreterSetting setting,
+      String userId, String email) {
+    setInterpreterBindingsForMode(email);
+    boolean ranParaForInterpreter = false;
+    synchronized (paragraphs) {
+      for (Paragraph p: paragraphs) {
+        InterpreterSetting paraIntpSetting = getSettingFromInterpreter(
+            replLoader.get(p.getRequiredReplName()));
+        if (QuboleInterpreterUtils.sparkInterpreterGroupName.equals(
+            paraIntpSetting.getGroup())) {
+          if (paraIntpSetting.equals(setting)) {
+            ranParaForInterpreter = true;
+            run(p.getId(), userId, email, true);
+          }
+          //do not run any other spark interpreter
+          else {
+            p.setErrorResultForBootstrap(new InterpreterResult(
+                Code.ERROR, Type.TEXT, DIFF_INTP_BOOTSTRAP_MSG));
+          }
+        } else {
+          run(p.getId(), userId, email, true);
+        }
+      }
+    }
+    return ranParaForInterpreter;
+  }
+
+  private InterpreterSetting getSettingFromInterpreter(Interpreter interpreter) {
+    InterpreterGroup intpGroup = interpreter.getInterpreterGroup();
+    String settingId = intpGroup.getId();
+    InterpreterFactory intpFactory = CronJob.notebook.getInterpreterFactory();
+    return intpFactory.get(settingId);
   }
 
   public List<InterpreterCompletion> completion(String paragraphId, String buffer, int cursor) {

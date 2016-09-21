@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.zeppelin.conf.ZeppelinConfiguration;
+import org.apache.zeppelin.interpreter.InterpreterFactory;
 import org.apache.zeppelin.notebook.Note;
 import org.apache.zeppelin.notebook.Notebook;
 import org.apache.zeppelin.notebook.Notebook.CronJob;
@@ -82,6 +83,8 @@ public class QuboleUtil {
   private static final boolean useHadoopCmd = "true"
       .equalsIgnoreCase(System.getenv("ENABLE_HADOOP_CMD"));
   private static final ExecutorService syncExecutor = Executors.newFixedThreadPool(5);
+  private static final Map<String, String> emailtToUserId = new HashMap<>();
+  private static final Map<String, String> userIdToEmail = new HashMap<>();
 
   public static final String s3cmd = "/usr/bin/s3cmd -c /usr/lib/hustler/s3cfg ";
   public static final String hadoopcmd = "/usr/lib/hadoop2/bin/hadoop";
@@ -567,10 +570,26 @@ public class QuboleUtil {
     return note;
   }
 
-
   public static String getNotebookDir() {
     return zepConfig.getNotebookDir();
   }
+
+  public static void putUserForEmail(String email, String userId) {
+    emailtToUserId.put(email, userId);
+  }
+
+  public static String getUserForEmail(String email) {
+    return emailtToUserId.get(email);
+  }
+
+  public static void putEmailForUser(String userId, String email) {
+    userIdToEmail.put(userId, email);
+  }
+
+  public static String getEmailForUser(String userId) {
+    return userIdToEmail.get(userId);
+  }
+
 
   public static void syncNotesToFolders() {
     CommandManager instance = CommandManager.getInstance();
@@ -598,7 +617,7 @@ public class QuboleUtil {
     instance.executeCommand(putsCommand);
   }
 
-  public static void initNoteBookSync(ZeppelinConfiguration conf) {
+  public static void initNoteBookSync(ZeppelinConfiguration conf, InterpreterFactory replFactory) {
     LOG.info("ops Using folder based sync in Zeppelin");
 
     int notebookSyncFrequency = conf.getNotebookSyncFrequency();
@@ -628,6 +647,7 @@ public class QuboleUtil {
         QuboleUtil.putInterpretersToObjectStore();
       }
     }, 0, interpreterSyncFrequency, TimeUnit.MILLISECONDS);
+    PersistentIntpsAndBootstrapNotes.schedulePeristentInterpreters(replFactory);
   }
 
   public static String getResponseFromConnection(HttpURLConnection conn) throws Exception {

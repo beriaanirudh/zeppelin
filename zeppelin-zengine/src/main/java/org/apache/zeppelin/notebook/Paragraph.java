@@ -549,4 +549,15 @@ public class Paragraph extends Job implements Serializable, Cloneable {
   public Map<String, ParagraphRuntimeInfo> getRuntimeInfos() {
     return runtimeInfos;
   }
+
+  public void setErrorResultForBootstrap(InterpreterResult result) {
+    refreshDate();
+    setResult(result);
+    /* If the status of paragraph is already ERROR,
+     * then the paragraph result is not updated, and hence
+     * the intended message won't be shown. This force
+     * flag would update the message in that case also.
+     */
+    setStatus(Status.ERROR, true);
+  }
 }

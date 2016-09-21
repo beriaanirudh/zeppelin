@@ -39,6 +39,7 @@ import org.apache.zeppelin.notebook.Notebook.CronJob;
 import org.apache.zeppelin.scheduler.Job;
 import org.apache.zeppelin.scheduler.Job.Status;
 import org.apache.zeppelin.util.QuboleUtil;
+import org.apache.zeppelin.util.PersistentIntpsAndBootstrapNotes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonatype.aether.RepositoryException;
@@ -539,8 +540,10 @@ public class InterpreterFactory implements InterpreterGroupFactory {
       intpSetting.setInterpreterGroupFactory(this);
       interpreterSettings.put(intpSetting.id(), intpSetting);
       saveToFile();
-      // Sync interpreter settings to Object Store
       if (CronJob.notebook != null) {
+        PersistentIntpsAndBootstrapNotes.checkPersistence(intpSetting, this,
+            CronJob.notebook.getAllNotes());
+        // Sync interpreter settings to Object Store
         QuboleUtil.putInterpretersToObjectStore();
       }
       return intpSetting;

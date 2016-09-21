@@ -535,4 +535,16 @@ public class RemoteInterpreter extends Interpreter {
         calle + ". " +
         "is process running?: " + interpreterProcess.isRunning());
   }
+
+  @Override
+  public void openInterpreterProactively() {
+    RemoteInterpreterProcess interpreterProcess = getInterpreterProcess();
+    Client client = null;
+    try {
+      client = interpreterProcess.getClient();
+      client.open(className);
+    } catch (Exception e) {
+      logger.error("Error while starting persistent interpreter:", e);
+    }
+  }
 }
