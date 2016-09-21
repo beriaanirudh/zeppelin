@@ -335,4 +335,6 @@ public abstract class Interpreter {
     return null;
   }
 
+  public void openInterpreterProactively()
+  {}
 }

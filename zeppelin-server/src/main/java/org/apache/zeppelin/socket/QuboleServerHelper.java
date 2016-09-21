@@ -58,6 +58,8 @@ public class QuboleServerHelper {
     if (conn != null && email != null) {
       userIdToEmailMap.put(userId, email);
     }
+    QuboleUtil.putUserForEmail(email, userId);
+    QuboleUtil.putEmailForUser(userId, email);
   }
 
   public static String getUserForConn(NotebookSocket conn) {

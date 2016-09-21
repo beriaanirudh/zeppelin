@@ -138,7 +138,11 @@ public abstract class Job {
   }
 
   public void setStatus(Status status) {
-    if (this.status == status) {
+    setStatus(status, false);
+  }
+
+  public void setStatus(Status status, boolean forced) {
+    if (!forced && this.status == status) {
       return;
     }
     Status before = this.status;
@@ -262,5 +266,9 @@ public abstract class Job {
 
   public void setResult(Object result) {
     this.result = result;
+  }
+
+  protected void refreshDate() {
+    this.dateStarted = this.dateFinished = new Date();
   }
 }

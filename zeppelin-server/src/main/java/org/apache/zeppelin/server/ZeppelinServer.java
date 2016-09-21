@@ -37,6 +37,7 @@ import org.apache.zeppelin.user.Credentials;
 import org.apache.zeppelin.utils.SecurityUtils;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.server.AbstractConnector;
+import org.apache.zeppelin.util.PersistentIntpsAndBootstrapNotes;
 import org.apache.zeppelin.util.QuboleUtil;
 import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.server.Handler;
@@ -105,7 +106,7 @@ public class ZeppelinServer extends Application {
       LOG.error("ops Exception occured " + e.getMessage());
     }
 
-    QuboleUtil.initNoteBookSync(conf);
+    QuboleUtil.initNoteBookSync(conf, replFactory);
   }
 
   public static void main(String[] args) throws InterruptedException {
