@@ -33,7 +33,8 @@
             'xeditable',
             'ngToast',
             'focus-if',
-            'ngResource'
+            'ngResource',
+            'zeppelinWebApp.templates'
         ])
         .filter('breakFilter', function() {
             return function (text) {

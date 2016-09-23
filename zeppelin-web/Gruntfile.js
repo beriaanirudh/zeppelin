@@ -55,6 +55,29 @@ module.exports = function (grunt) {
         }]
       }
     },
+    
+    html2js: {
+      options: {
+        base: '<%= yeoman.app %>',
+    	module: 'zeppelinWebApp.templates',
+    	singleModule: true,
+    	useStrict: true,
+    	htmlmin: {
+    	  collapseBooleanAttributes: true,
+    	  collapseWhitespace: true,
+    	  removeAttributeQuotes: true,
+    	  removeComments: true,
+    	  removeEmptyAttributes: true,
+    	  removeRedundantAttributes: true,
+    	  removeScriptTypeAttributes: true,
+    	  removeStyleLinkTypeAttributes: true
+    	}
+      },
+      main: {
+        src: ['<%= yeoman.app %>/app/**/*.html','<%= yeoman.app %>/components/**/*.html'],
+    	dest: '<%= yeoman.app %>/app/populate_template_cache.js'
+      }
+    },
 
     htmlhint: {
       options: {
@@ -517,6 +540,7 @@ module.exports = function (grunt) {
     'useminPrepare',
     'concurrent:dist',
     'postcss',
+    'html2js:main',
     'concat',
     'ngAnnotate',
     'copy:dist',
