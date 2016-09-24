@@ -19,6 +19,7 @@ package org.apache.zeppelin.interpreter.remote;
 
 import java.util.*;
 
+import org.apache.commons.exec.LogOutputStream;
 import org.apache.thrift.TException;
 import org.apache.zeppelin.display.AngularObject;
 import org.apache.zeppelin.display.AngularObjectRegistry;
@@ -136,6 +137,9 @@ public class RemoteInterpreter extends Interpreter {
     synchronized (intpGroup) {
       if (intpGroup.getRemoteInterpreterProcess() == null) {
         // create new remote process
+        if (isSparkInterpreter()) {
+          addInterpreterPropstoSparkSubmitOptions();
+        }
         RemoteInterpreterProcess remoteProcess = new RemoteInterpreterProcess(
             interpreterRunner, interpreterPath, localRepoPath, env, connectTimeout,
             remoteInterpreterProcessListener);
@@ -147,7 +151,15 @@ public class RemoteInterpreter extends Interpreter {
     }
   }
 
-  public synchronized void init() {
+  private boolean isSparkInterpreter() {
+    String intpClassName = getClassName();
+    RegisteredInterpreter registeredInterpreter = Interpreter
+        .findRegisteredInterpreterByClassName(intpClassName);
+    return registeredInterpreter != null
+        && "spark".equalsIgnoreCase(registeredInterpreter.getGroup());
+  }
+
+  private synchronized void init() {
     if (initialized == true) {
       return;
     }
@@ -449,6 +461,26 @@ public class RemoteInterpreter extends Interpreter {
 
   private String getInterpreterGroupKey(InterpreterGroup interpreterGroup) {
     return interpreterGroup.getId();
+  }
+
+  private void addInterpreterPropstoSparkSubmitOptions() {
+    StringBuffer sparkSubmitOption = new StringBuffer();
+    Properties properties = getProperty();
+    HashSet<String> keysToAdd = new HashSet<>();
+    keysToAdd.add("spark.executor.instances");
+    keysToAdd.add("spark.qubole.max.executors");
+    keysToAdd.add("spark.sql.qubole.split.computation");
+    for (Object key : properties.keySet()) {
+      String propKey = (String) key;
+      if (keysToAdd.contains(propKey)) {
+        String val = getProperty(propKey);
+        if (val != null) {
+          logger.debug("Add property " + key + " to spark submit options");
+          sparkSubmitOption.append(" --conf " + propKey + "=" + val);
+        }
+      }
+    }
+    env.put("SPARK_SUBMIT_OPTIONS", sparkSubmitOption.toString());
   }
 
   private RemoteInterpreterContext convert(InterpreterContext ic) {
