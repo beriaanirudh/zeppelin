@@ -649,7 +649,7 @@ public class QuboleUtil {
         QuboleUtil.putInterpretersToObjectStore();
       }
     }, 0, interpreterSyncFrequency, TimeUnit.MILLISECONDS);
-    PersistentIntpsAndBootstrapNotes.schedulePeristentInterpreters(replFactory);
+    PersistentIntpsAndBootstrapNotes.schedulePeristentInterpreters();
   }
 
   public static String getResponseFromConnection(HttpURLConnection conn) throws Exception {
