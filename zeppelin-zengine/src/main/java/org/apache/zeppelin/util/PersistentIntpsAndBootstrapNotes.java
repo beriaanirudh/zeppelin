@@ -13,6 +13,7 @@ import org.apache.zeppelin.interpreter.InterpreterSetting;
 import org.apache.zeppelin.interpreter.remote.RemoteInterpreterProcess;
 import org.apache.zeppelin.interpreter.thrift.RemoteInterpreterService.Client;
 import org.apache.zeppelin.notebook.Note;
+import org.apache.zeppelin.notebook.Notebook;
 import org.apache.zeppelin.notebook.Notebook.CronJob;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,11 +31,8 @@ public class PersistentIntpsAndBootstrapNotes implements Runnable {
   private static final ScheduledExecutorService service =
       Executors.newSingleThreadScheduledExecutor();
 
-  private final InterpreterFactory intpFactory;
-
-  private PersistentIntpsAndBootstrapNotes(InterpreterFactory factory) {
-    intpFactory = factory;
-  }
+  private PersistentIntpsAndBootstrapNotes()
+  {}
 
   @Override
   public void run() {
@@ -42,17 +40,19 @@ public class PersistentIntpsAndBootstrapNotes implements Runnable {
      * stopping the scheduler, so we should Catch'em All.
      */
     try {
+      Notebook notebook = CronJob.notebook;
+      InterpreterFactory intpFactory = notebook.getInterpreterFactory();
       List<InterpreterSetting> settings = intpFactory.get();
       for (InterpreterSetting setting: settings) {
-        checkPersistence(setting, intpFactory, CronJob.notebook.getAllNotes());
+        checkPersistence(setting, intpFactory, notebook.getAllNotes());
       }
     } catch (Exception e) {
       LOG.error("Error while trying to start persistent interpreters", e);
     }
   }
 
-  public static void schedulePeristentInterpreters(InterpreterFactory factory) {
-    PersistentIntpsAndBootstrapNotes persistentIntp = new PersistentIntpsAndBootstrapNotes(factory);
+  public static void schedulePeristentInterpreters() {
+    PersistentIntpsAndBootstrapNotes persistentIntp = new PersistentIntpsAndBootstrapNotes();
     LOG.info("Starting a scheduler to start persistent interpreters and "
         + "run bootstrap notebooks");
     ZeppelinConfiguration conf = ZeppelinConfiguration.create();
