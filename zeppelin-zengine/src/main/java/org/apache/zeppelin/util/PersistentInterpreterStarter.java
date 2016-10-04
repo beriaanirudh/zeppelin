@@ -6,7 +6,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.zeppelin.interpreter.Interpreter;
-import org.apache.zeppelin.interpreter.LazyOpenInterpreter;
 
 /**
  * This class starts the interpreters in async
