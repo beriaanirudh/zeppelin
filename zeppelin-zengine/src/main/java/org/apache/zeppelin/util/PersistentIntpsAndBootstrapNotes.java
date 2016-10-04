@@ -10,6 +10,7 @@ import org.apache.zeppelin.interpreter.Interpreter;
 import org.apache.zeppelin.interpreter.InterpreterFactory;
 import org.apache.zeppelin.interpreter.InterpreterGroup;
 import org.apache.zeppelin.interpreter.InterpreterSetting;
+import org.apache.zeppelin.interpreter.LazyOpenInterpreter;
 import org.apache.zeppelin.interpreter.remote.RemoteInterpreterProcess;
 import org.apache.zeppelin.interpreter.thrift.RemoteInterpreterService.Client;
 import org.apache.zeppelin.notebook.Note;
@@ -28,6 +29,7 @@ public class PersistentIntpsAndBootstrapNotes implements Runnable {
   private static final Logger LOG = LoggerFactory.getLogger(PersistentIntpsAndBootstrapNotes.class);
   private static final String PERSISTENT_PROPERTY = "zeppelin.interpreter.persistent";
   private static final String PERSISTENT_NOTEBOOK = "zeppelin.interpreter.bootstrap.notebook";
+  public static final String SPARK_CLASSNAME = "org.apache.zeppelin.spark.SparkInterpreter";
 
   private static final ScheduledExecutorService service =
       Executors.newSingleThreadScheduledExecutor();
@@ -132,11 +134,22 @@ public class PersistentIntpsAndBootstrapNotes implements Runnable {
         intpFactory.restart(setting.id());
         intpFactory.createInterpretersForNote(setting, NoteInterpreterLoader.SHARED_SESSION, NoteInterpreterLoader.SHARED_SESSION);
         InterpreterGroup group = setting.getInterpreterGroup(null);
-        LOG.info("Starting interpreter = " + setting.getName() + " with id = " + setting.id()
-            + " after boot strap notebook has been run");
+        LOG.info("Starting persistent interpreter = " + setting.getName() + " with id = " + setting.id()
+                 + "since either there was no bootstrap notebook or"
+                 + "bootstrap did not use this interpreter.");
         for (List<Interpreter> intpCollect: group.values()) {
           for (Interpreter intp: intpCollect) {
-            PersistentInterpreterStarter.startPersistentInterpreter(intp);
+            /* Following from ZEP-551, it was observed that due
+             * to a deadlock bug in OSS R interpreter, 'opening' R
+             * interpreter stalled the Remote JVM completely. For our use-cases of
+             * persistent interpreters, 'opening' the Spark interpreter suffices
+             * since it starts the remote JVM. Also, by not pro-actively opening
+             * other interpreters, we save our-selves from any other
+             * rogue interpreter.
+             */
+            if (SPARK_CLASSNAME.equals(intp.getClassName())) {
+              PersistentInterpreterStarter.startPersistentInterpreter(intp);
+            }
           }
         }
       }
