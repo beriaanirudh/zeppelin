@@ -519,24 +519,26 @@ public class Note implements Serializable, JobListener {
   public boolean runParagraphsForBootstrap(InterpreterSetting setting,
       String userId, String email) {
     boolean ranParaForInterpreter = false;
+    List<Paragraph> newParaList = null;
     synchronized (paragraphs) {
-      for (Paragraph p: paragraphs) {
-        InterpreterSetting paraIntpSetting = getSettingFromInterpreter(
-            replLoader.get(p.getRequiredReplName()));
-        if (QuboleUtil.sparkInterpreterGroupName.equals(
-            paraIntpSetting.getGroup())) {
-          if (paraIntpSetting.equals(setting)) {
-            ranParaForInterpreter = true;
-            run(p.getId(), userId, email, true);
-          }
-          //do not run any other spark interpreter
-          else {
-            p.setErrorResultForBootstrap(new InterpreterResult(
-                Code.ERROR, Type.TEXT, DIFF_INTP_BOOTSTRAP_MSG));
-          }
-        } else {
+      newParaList = new LinkedList<Paragraph>(paragraphs);
+    }
+    for (Paragraph p: newParaList) {
+      InterpreterSetting paraIntpSetting = getSettingFromInterpreter(
+          replLoader.get(p.getRequiredReplName()));
+      if (QuboleUtil.sparkInterpreterGroupName.equals(
+          paraIntpSetting.getGroup())) {
+        if (paraIntpSetting.equals(setting)) {
+          ranParaForInterpreter = true;
           run(p.getId(), userId, email, true);
         }
+        //do not run any other spark interpreter
+        else {
+          p.setErrorResultForBootstrap(new InterpreterResult(
+              Code.ERROR, Type.TEXT, DIFF_INTP_BOOTSTRAP_MSG));
+        }
+      } else {
+        run(p.getId(), userId, email, true);
       }
     }
     return ranParaForInterpreter;
