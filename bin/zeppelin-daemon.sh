@@ -169,6 +169,7 @@ function initqubole() {
   export QUBOLE_API_TOKEN=`nodeinfo qubole_cluster_api_token`
   export QUBOLE_BASE_URL=`nodeinfo qubole_base_url`
   export CLUSTER_ID=`nodeinfo cluster_id`
+  export ENABLE_EVENTBUS=`nodeinfo enable_eventbus`
   echo "QUBOLE_BASE_URL is: ${QUBOLE_BASE_URL}, FIRST_CLASS_NOTEBOOK_LOC=${FIRST_CLASS_NOTEBOOK_LOC}"
 }
 

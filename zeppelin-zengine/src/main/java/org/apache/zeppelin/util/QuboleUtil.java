@@ -22,12 +22,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
@@ -63,7 +65,10 @@ public class QuboleUtil {
   private static final String confLoc = System.getenv("INTERPRETER_CONF_LOC");
   private static final String opsApiPath = "/opsapi/v1/zeppelin";
   private static final String opsApiPathV2 = "/opsapi/v2/zeppelin";
+  private static final String enable_eventbus = System.getenv("ENABLE_EVENTBUS");
+  private static final String eventbus_url = System.getenv("EVENTBUS_URL");
   private static final String clusterId = System.getenv("CLUSTER_ID");
+  private static final String clusterTag = System.getenv("CLUSTER_TAG");
   private static final ZeppelinConfiguration zepConfig = ZeppelinConfiguration.create();
 
   public static final String SOURCE = "source";
@@ -71,6 +76,8 @@ public class QuboleUtil {
   public static final String INTERPRETER_SETTINGS = "interpreterSettings";
   public static final String PROPERTIES = "properties";
   private static final ExecutorService executorService =  Executors.newFixedThreadPool(5);
+  private static final ExecutorService eventbusExecutor = new ThreadPoolExecutor(5, 5, 0L, 
+      TimeUnit.MILLISECONDS, new ArrayBlockingQueue<Runnable>(1000, true));
   private static final ExecutorService s3Executor = Executors.newFixedThreadPool(5);
 
   public static final String s3cmd = "/usr/bin/s3cmd -c /usr/lib/hustler/s3cfg ";
@@ -135,7 +142,64 @@ public class QuboleUtil {
     String apiPath = opsApiPath + "/events/";
     Map<String, String> params = new HashMap<String, String>();
     params.put("event", event);
+    sendRequestToEventbus(params);
     return sendRequestToQuboleRails(apiPath, params, "POST", numRetries);
+  }
+
+  private static void sendRequestToEventbus(final Map<String, String> params) {
+
+    if ("true".equals(enable_eventbus)) {
+      try {
+        eventbusExecutor.execute(new Runnable() {
+          @Override
+          public void run() {
+            try {
+              if (params != null) {
+                HttpURLConnection connection = (HttpURLConnection) (new URL(eventbus_url))
+                    .openConnection();
+                connection.setRequestProperty("Content-Type", "application/json");
+                connection.setRequestProperty("Accept", "application/json");
+                connection.setRequestMethod("POST");
+                connection.setDoOutput(true);
+
+                Gson gson = new Gson();
+
+                List<String> messages = new ArrayList<>();
+                List<String> keys = new ArrayList<>();
+
+                Map<String, Object> json = new HashMap<String, Object>();
+
+                String jsonData = gson.toJson(params);
+                messages.add(jsonData);
+                keys.add(clusterTag);
+
+                json.put("auth_token", getQuboleApiToken());
+                json.put("topic", "zeppelinmetrics");
+                json.put("key", keys);
+                json.put("message", messages);
+
+                OutputStreamWriter out = new OutputStreamWriter(connection.getOutputStream());
+                String message_body = gson.toJson(json);
+                out.write(message_body);
+                out.flush();
+                out.close();
+                int responseCode = connection.getResponseCode();
+                if (responseCode == 200) {
+                  LOG.debug("POST request to eventbus successful");
+                } else {
+                  LOG.warn(responseCode + " error in making call to eventbus");
+                  LOG.warn(connection.getResponseMessage());
+                }
+              }
+            } catch (IOException e) {
+              LOG.error("Error while sending to eventbus", e);
+            }
+          }
+        });
+      } catch (RejectedExecutionException e) {
+        LOG.error("Spill while sending data to eventbus", e.getMessage()); 
+      }
+    }
   }
 
   /**
