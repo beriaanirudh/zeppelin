@@ -528,7 +528,7 @@ public class QuboleUtil {
           LOG.error("s3ops", e);
         }
       }
-    }, 0, interpreterSyncFrequency, TimeUnit.MILLISECONDS);
+    }, 0, notebookSyncFrequency, TimeUnit.MILLISECONDS);
 
     service.scheduleAtFixedRate(new Runnable() {
 
