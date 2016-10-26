@@ -3,6 +3,7 @@ package org.apache.zeppelin.socket;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -15,6 +16,8 @@ import org.apache.zeppelin.notebook.Note;
 import org.apache.zeppelin.notebook.Notebook;
 import org.apache.zeppelin.notebook.Paragraph;
 import org.apache.zeppelin.rest.message.NewParagraphRunRequest;
+import org.apache.zeppelin.rest.message.RunNotebookResponse;
+import org.apache.zeppelin.scheduler.Job;
 import org.apache.zeppelin.server.JsonResponse;
 import org.apache.zeppelin.server.ZeppelinServer;
 import org.apache.zeppelin.util.QuboleUtil;
@@ -36,6 +39,7 @@ public class QuboleServerHelper {
   public static final String CRON_EXECUTING_USER = "cronExecutingUser";
   private static final String HEADER_FETCH_KEY = "Qubole-Operation";
   private static final String COMMIT_OPERATION = "commit";
+  private static final String PARA_STATUS_KEY = "status";
 
   private static final Logger LOG = LoggerFactory.getLogger(QuboleServerHelper.class);
 
@@ -185,6 +189,36 @@ public class QuboleServerHelper {
           " in paragraph = " + p.getId() + " of note = " + noteId);
       p.setQueryHistId(request.getQueryHistId());
     }
+  }
+
+  public static Response conformResponseForTapp(Note note) {
+    List<Map<String, String>> paraInfos = note.generateParagraphsInfo();
+    Job.Status status = Job.Status.RUNNING;
+    Integer finishCount = 0;
+    for (Map<String, String> pInfo : paraInfos) {
+      String pStatus = pInfo.get(PARA_STATUS_KEY);
+      if (Job.Status.ERROR.toString().equals(pStatus)) {
+        status = Job.Status.ERROR;
+        finishCount += 1;
+      }
+      if (Job.Status.ABORT.toString().equals(pStatus)) {
+        status = Job.Status.ABORT;
+        finishCount += 1;
+      }
+      if (Job.Status.FINISHED.toString().equals(pStatus)) {
+        finishCount += 1;
+      }
+    }
+    
+    if (finishCount == paraInfos.size() && Job.Status.RUNNING.equals(status)) {
+      status = Job.Status.FINISHED;
+    }
+    else if (finishCount != paraInfos.size()) {
+      status = Job.Status.RUNNING;
+    }
+    
+    RunNotebookResponse runNotebookResponse = new RunNotebookResponse(status.toString(), paraInfos);
+    return new JsonResponse<>(Status.OK, null, runNotebookResponse).build();
   }
 
   private static boolean isNoteRunning(Notebook notebook, String noteId) {

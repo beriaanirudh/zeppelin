@@ -56,6 +56,7 @@ import org.apache.zeppelin.rest.message.NewParagraphRequest;
 import org.apache.zeppelin.rest.message.RunParagraphWithParametersRequest;
 import org.apache.zeppelin.search.SearchService;
 import org.apache.zeppelin.rest.message.NewParagraphRunRequest;
+import org.apache.zeppelin.rest.message.RunNotebookResponse;
 import org.apache.zeppelin.scheduler.Job;
 import org.apache.zeppelin.server.JsonResponse;
 import org.apache.zeppelin.socket.NotebookServer;
@@ -590,10 +591,9 @@ public class NotebookRestApi {
     if (note == null) {
       return new JsonResponse<>(Status.NOT_FOUND, "note not found.").build();
     }
-
-    return new JsonResponse<>(Status.OK, null, note.generateParagraphsInfo()).build();
+    return QuboleServerHelper.conformResponseForTapp(note);
   }
-  
+
   /**
    * Run paragraph job REST API
    * 
