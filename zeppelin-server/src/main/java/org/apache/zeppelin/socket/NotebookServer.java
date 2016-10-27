@@ -17,6 +17,7 @@
 package org.apache.zeppelin.socket;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.*;
@@ -194,6 +195,9 @@ public class NotebookServer extends WebSocketServlet implements
             break;
           case PARAGRAPH_CLEAR_OUTPUT:
             clearParagraphOutput(conn, userAndRoles, notebook, messagereceived);
+            break;
+          case PARAGRAPH_FETCH_OUTPUT:
+            fetchParagraphOutput(conn, notebook, messagereceived);
             break;
           case NOTE_UPDATE:
             updateNote(conn, userAndRoles, notebook, messagereceived);
@@ -480,7 +484,8 @@ public class NotebookServer extends WebSocketServlet implements
         return;
       }
       addConnectionToNote(note.id(), conn);
-      conn.send(serializeMessage(new Message(OP.NOTE).put("note", note)));
+      Note clonedNote = QuboleUsabilityHelper.getTrimmedNote(note);
+      conn.send(serializeMessage(new Message(OP.NOTE).put("note", clonedNote)));
       sendAllAngularObjects(note, conn);
     }
   }
@@ -711,6 +716,24 @@ public class NotebookServer extends WebSocketServlet implements
     note.clearParagraphOutput(paragraphId);
     Paragraph paragraph = note.getParagraph(paragraphId);
     broadcastParagraph(note, paragraph);
+  }
+  
+  private void fetchParagraphOutput(NotebookSocket conn, Notebook notebook,
+      Message fromMessage) throws IOException {
+    final String paragraphId = (String) fromMessage.get("id");
+    if (paragraphId == null) {
+      return;
+    }
+
+    final Note note = notebook.getNote(getOpenNoteId(conn));
+    Paragraph para = note.getParagraph(paragraphId);
+    if (para == null) {
+      conn.send(serializeMessage(new Message(OP.NOTE).put("note", note)));
+    }
+    else {
+      conn.send(serializeMessage(new Message(OP.PARAGRAPH).put("paragraph", para).
+          put("updateResultForced", true)));
+    }
   }
 
   private void completion(NotebookSocket conn, HashSet<String> userAndRoles, Notebook notebook,

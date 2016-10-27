@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 'use strict';
+/*globals $:false */
 
 angular.module('zeppelinWebApp')
   .controller('ParagraphCtrl', function($scope,$rootScope, $route, $window, $element, $routeParams, $location,
@@ -96,6 +97,7 @@ angular.module('zeppelinWebApp')
     $scope.colWidthOption = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ];
     $scope.showTitleEditor = false;
     $scope.paragraphFocused = false;
+    $scope.paragraph.fetching = false;
     if (newParagraph.focus) {
       $scope.paragraphFocused = true;
     }
@@ -161,7 +163,6 @@ angular.module('zeppelinWebApp')
       if (textEl.length) {
         // clear all lines before render
         $scope.clearTextOutput();
-
         if ($scope.paragraph.result && $scope.paragraph.result.msg) {
           $scope.appendTextOutput($scope.paragraph.result.msg);
         }
@@ -348,7 +349,8 @@ angular.module('zeppelinWebApp')
   // TODO: this may have impact on performance when there are many paragraphs in a note.
   $scope.$on('updateParagraph', function(event, data) {
     if (data.paragraph.id === $scope.paragraph.id &&
-        (data.paragraph.dateCreated !== $scope.paragraph.dateCreated ||
+        (data.updateResultForced ||
+         data.paragraph.dateCreated !== $scope.paragraph.dateCreated ||
          data.paragraph.dateFinished !== $scope.paragraph.dateFinished ||
          data.paragraph.dateStarted !== $scope.paragraph.dateStarted ||
          data.paragraph.dateUpdated !== $scope.paragraph.dateUpdated ||
@@ -370,7 +372,7 @@ angular.module('zeppelinWebApp')
 
       var resultRefreshed = (data.paragraph.dateFinished !== $scope.paragraph.dateFinished) ||
         isEmpty(data.paragraph.result) !== isEmpty($scope.paragraph.result) ||
-        data.paragraph.status === 'ERROR' || (data.paragraph.status === 'FINISHED' && statusChanged);
+        data.paragraph.status === 'ERROR' || (data.paragraph.status === 'FINISHED' && statusChanged) || data.updateResultForced;
 
       //console.log("updateParagraph oldData %o, newData %o. type %o -> %o, mode %o -> %o", $scope.paragraph, data, oldType, newType, oldGraphMode, newGraphMode);
 
@@ -445,6 +447,9 @@ angular.module('zeppelinWebApp')
           }, 500);
         }
       }
+      $scope.paragraph.fetching = false;
+      $.unblockUI();
+
     }
 
   });
@@ -557,7 +562,21 @@ angular.module('zeppelinWebApp')
   $scope.clearParagraphOutput = function() {
     websocketMsgSrv.clearParagraphOutput($scope.paragraph.id);
   };
-
+  
+  $scope.fetchParagraphOutput = function() {
+	$scope.paragraph.fetching = true;
+	$.blockUI({message: '<h1><img src="assets/images/busy.gif" /></h1>'});
+    websocketMsgSrv.fetchParagraphOutput($scope.paragraph.id);
+  };
+  
+  $scope.isFetchingOutput = function() {
+    return $scope.paragraph.fetching === true;
+  };
+  
+  $scope.isFetchNeeded = function() {
+    return ($scope.paragraph.result && $scope.paragraph.result.outputRemoved && $scope.paragraph.result.outputRemoved === 'true');
+  };
+  
   $scope.toggleEditor = function() {
     if ($scope.paragraph.config.editorHide) {
       $scope.openEditor();

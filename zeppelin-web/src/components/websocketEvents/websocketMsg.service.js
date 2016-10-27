@@ -117,6 +117,10 @@ angular.module('zeppelinWebApp').service('websocketMsgSrv', function($rootScope,
     clearParagraphOutput: function(paragraphId) {
       websocketEvents.sendNewEvent({op: 'PARAGRAPH_CLEAR_OUTPUT', data: {id: paragraphId}});
     },
+    
+    fetchParagraphOutput: function(paragraphId) {
+      websocketEvents.sendNewEvent({op: 'PARAGRAPH_FETCH_OUTPUT', data: {id: paragraphId}});
+    },
 
     completion: function(paragraphId, buf, cursor) {
       websocketEvents.sendNewEvent({

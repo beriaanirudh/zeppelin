@@ -261,7 +261,6 @@
   text-decoration: none;
   cursor: default;
 }
-
 .userlist {
   width: 230px;
   font-family: Georgia, Times, serif;
@@ -309,4 +308,8 @@
 .userlist li:active,
 .userlist li.active {
   background-color: #428BCA;
+}
+
+.noPadding { 
+  padding: 0 !important;
 }

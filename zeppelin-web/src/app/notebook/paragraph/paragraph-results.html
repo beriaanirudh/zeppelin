@@ -32,7 +32,11 @@ limitations under the License.
          tooltip="Follow Output"></div>
     <div id="p{{paragraph.id}}_text"
          style="max-height: {{paragraph.config.graph.height}}px; overflow: auto"
-         class="text"></div>
+         class="text">
+    </div>
+    <div ng-show="isFetchNeeded()">
+      <button type="button" class="btn btn-link noPadding" ng-click="fetchParagraphOutput()">Fetch Output</button>
+    </div>
     <div class="fa fa-chevron-up scroll-paragraph-up"
          ng-show="showScrollUpIcon()"
          ng-click="scrollParagraphUp()"
