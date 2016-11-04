@@ -84,10 +84,12 @@ ZEPPELIN_LOGFILE="${ZEPPELIN_LOG_DIR}/zeppelin-interpreter-${INTERPRETER_ID}-${Z
 if [[ ${INTERPRETER_ID} == "spark" ]]; then
   export CONF_JAVA_OPTS="-Dspark.executor.extraJavaOptions=-Dlog4j.configuration=file:/usr/lib/spark/conf/log4j.properties -Dspark.yarn.am.extraJavaOptions=-Dlog4j.configuration=file:/usr/lib/spark/conf/log4j.properties"
   readSparkConf /usr/lib/spark/conf/spark-defaults.conf
+  JAVA_INTP_OPTS+=" ${CONF_JAVA_OPTS}"
+  JAVA_INTP_OPTS+=" -XX:OnOutOfMemoryError='kill -9 %p'"
 fi
 
 JAVA_INTP_OPTS+=" -Dlog4j.configuration=file:/usr/lib/zeppelin/conf/log4j.properties"
-JAVA_INTP_OPTS+=" ${CONF_JAVA_OPTS} -Dzeppelin.log.file=${ZEPPELIN_LOGFILE}"
+JAVA_INTP_OPTS+=" -Dzeppelin.log.file=${ZEPPELIN_LOGFILE}"
 
 if [[ ! -d "${ZEPPELIN_LOG_DIR}" ]]; then
   echo "Log dir doesn't exist, create ${ZEPPELIN_LOG_DIR}"

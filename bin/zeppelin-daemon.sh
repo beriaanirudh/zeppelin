@@ -53,6 +53,7 @@ ZEPPELIN_OUTFILE="${ZEPPELIN_LOG_DIR}/zeppelin-${ZEPPELIN_IDENT_STRING}-${HOSTNA
 ZEPPELIN_PID="${ZEPPELIN_PID_DIR}/zeppelin-${ZEPPELIN_IDENT_STRING}-${HOSTNAME}.pid"
 ZEPPELIN_MAIN=org.apache.zeppelin.server.ZeppelinServer
 export CONF_JAVA_OPTS=""
+export JAVA_SPARK_OPTIONS_WITH_SPACES=()
 readSparkConf /usr/lib/spark/conf/spark-defaults.conf
 JAVA_OPTS+=" ${CONF_JAVA_OPTS} -Dzeppelin.log.file=${ZEPPELIN_LOGFILE}"
 
@@ -188,7 +189,7 @@ function start() {
   initialize_default_directories
   initqubole
 
-  nohup nice -n $ZEPPELIN_NICENESS $ZEPPELIN_RUNNER $JAVA_OPTS -cp $ZEPPELIN_CLASSPATH_OVERRIDES:$CLASSPATH $ZEPPELIN_MAIN >> "${ZEPPELIN_OUTFILE}" 2>&1 < /dev/null &
+  nohup nice -n $ZEPPELIN_NICENESS $ZEPPELIN_RUNNER $JAVA_OPTS "${JAVA_SPARK_OPTIONS_WITH_SPACES[@]}" -cp $ZEPPELIN_CLASSPATH_OVERRIDES:$CLASSPATH $ZEPPELIN_MAIN >> "${ZEPPELIN_OUTFILE}" 2>&1 < /dev/null &
   pid=$!
   if [[ -z "${pid}" ]]; then
     action_msg "${ZEPPELIN_NAME} start" "${SET_ERROR}"

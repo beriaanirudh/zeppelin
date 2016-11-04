@@ -109,7 +109,12 @@ function readSparkConf() {
         fi
         SPARK_CONF_KEY=`echo "${line}" | sed -e 's/\(^spark[^ ]*\)[ \t]*\(.*\)/\1/g'`
         SPARK_CONF_VALUE=`echo "${line}" | sed -e 's/\(^spark[^ ]*\)[ \t]*\(.*\)/\2/g'`
-        export CONF_JAVA_OPTS+=" -D${SPARK_CONF_KEY}=${SPARK_CONF_VALUE}"        
+        #handle values that have whitespaces by inserting them into an array
+        if [[ "$(echo "$SPARK_CONF_VALUE" | grep -e '\s\+' )" ]]; then
+            JAVA_SPARK_OPTIONS_WITH_SPACES+=(""-D${SPARK_CONF_KEY}="${SPARK_CONF_VALUE}""")
+        else
+            CONF_JAVA_OPTS+=" -D${SPARK_CONF_KEY}=${SPARK_CONF_VALUE}"
+        fi;
     done < ${SPARK_CONF_PATH}
 }
 
