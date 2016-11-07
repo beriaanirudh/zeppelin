@@ -40,6 +40,7 @@ angular.module('zeppelinWebApp').controller('NotebookCtrl',
   $scope.interpreterBindings = [];
   $scope.isNoteDirty = null;
   $scope.saveTimer = null;
+  $scope.parasfetched = false;
 
   var connectedOnce = false;
 
@@ -88,7 +89,7 @@ angular.module('zeppelinWebApp').controller('NotebookCtrl',
 
   /** Init the new controller */
   var initNotebook = function() {
-    websocketMsgSrv.getNotebook($routeParams.noteId);
+    websocketMsgSrv.getNotebook($routeParams.noteId, false);
 
     var currentRoute = $route.current;
 
@@ -365,10 +366,27 @@ angular.module('zeppelinWebApp').controller('NotebookCtrl',
 
     if ($scope.note === null || force === true) {
       $scope.note = note;
+    } else if (!$scope.parasfetched) {
+      $scope.parasfetched = true;
+      if ($scope.note.paragraphs &&
+                 note.paragraphs &&
+                 $scope.note.paragraphs.length <  note.paragraphs.length) {
+        var start = $scope.note.paragraphs.length;
+        var remainingParas = [];
+        for (var i = start; i < note.paragraphs.length; i++ ) {
+          remainingParas.push(note.paragraphs[i]);
+        }
+        $scope.note.paragraphs.push.apply($scope.note.paragraphs, remainingParas);
+        return;
+      }
     }
     initializeLookAndFeel();
     //open interpreter binding setting when there're none selected
     getInterpreterBindings(getInterpreterBindingsCallBack);
+
+    if (!$scope.parasfetched) {
+      websocketMsgSrv.getNotebook(note.id, true);
+    }
   });
 
 

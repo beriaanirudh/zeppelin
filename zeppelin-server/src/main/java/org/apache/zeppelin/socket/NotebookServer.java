@@ -474,6 +474,8 @@ public class NotebookServer extends WebSocketServlet implements
       return;
     }
 
+    boolean fetchParas = (boolean) fromMessage.get("fetch");
+
     Note note = notebook.getNote(noteId);
     NotebookAuthorization notebookAuthorization = notebook.getNotebookAuthorization();
     note = QuboleUtil.downloadNoteIfNull(notebook, note, noteId);
@@ -485,8 +487,7 @@ public class NotebookServer extends WebSocketServlet implements
       }
       addConnectionToNote(note.id(), conn);
       Note clonedNote = QuboleUsabilityHelper.getTrimmedNote(note);
-      conn.send(serializeMessage(new Message(OP.NOTE).put("note", clonedNote)));
-      sendAllAngularObjects(note, conn);
+      improveLoadingExperience(conn, note, clonedNote, fetchParas);
     }
   }
 
@@ -1361,6 +1362,27 @@ public class NotebookServer extends WebSocketServlet implements
     InterpreterSetting interpreterSetting = notebook().getInterpreterFactory()
         .get(settingId);
     interpreterSetting.setInfos(metaInfos);
+  }
+
+  public void improveLoadingExperience(NotebookSocket conn,
+      Note note, Note clonedNote, boolean fetchParas) throws IOException {
+    if (fetchParas) {
+      conn.send(serializeMessage(new Message(OP.NOTE).put("note", clonedNote)));
+    } else {
+      List<Paragraph> paras = clonedNote.getParagraphs();
+      if (paras.size() > 2) {
+        for (int i = 2; i < paras.size(); i++) {
+          Paragraph para = paras.get(i);
+          String id = para.getId();
+          if (clonedNote.getParagraph(id) != null) {
+            clonedNote.removeParagraph(id);
+          }
+        }
+        conn.send(serializeMessage(
+            new Message(OP.NOTE).put("note", clonedNote)));
+      }
+      sendAllAngularObjects(note, conn);
+    }
   }
 
 }

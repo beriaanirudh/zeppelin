@@ -276,14 +276,18 @@ public class Note implements Serializable, JobListener {
    * @return a paragraph that was deleted, or <code>null</code> otherwise
    */
   public Paragraph removeParagraph(String paragraphId) {
-    removeAllAngularObjectInParagraph(paragraphId);
+    if (replLoader != null) {
+      removeAllAngularObjectInParagraph(paragraphId);
+    }
     ResourcePoolUtils.removeResourcesBelongsToParagraph(id(), paragraphId);
     synchronized (paragraphs) {
       Iterator<Paragraph> i = paragraphs.iterator();
       while (i.hasNext()) {
         Paragraph p = i.next();
         if (p.getId().equals(paragraphId)) {
-          index.deleteIndexDoc(this, p);
+          if (index != null){
+            index.deleteIndexDoc(this, p);
+          }
           i.remove();
           return p;
         }
