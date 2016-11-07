@@ -6,6 +6,8 @@ import java.util.Map;
 
 import org.apache.zeppelin.notebook.Note;
 import org.apache.zeppelin.notebook.Paragraph;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -16,9 +18,7 @@ public class QuboleUsabilityHelper {
   private static final String PARAGRAPH_OUTPUT_LIMIT_STR = 
       System.getenv("ZEPPELIN_OUTPUT_SIZE_LIMIT");
   //Outputs larger than OUTPUT_LIMIT in bytes will not be sent during GET_NOTE call.
-  private static final Integer PARAGRAPH_OUTPUT_LIMIT =
-      (PARAGRAPH_OUTPUT_LIMIT_STR == null || PARAGRAPH_OUTPUT_LIMIT_STR == "") ? 
-      0 : Integer.parseInt(PARAGRAPH_OUTPUT_LIMIT_STR);
+  private static Integer PARAGRAPH_OUTPUT_LIMIT = 0;
   private static final String PARA_OUTPUT_KEY = "msg";
   private static final String PARA_OUTPUT_MESSAGE = "Output exceeds size limit of " +
       PARAGRAPH_OUTPUT_LIMIT_STR + " bytes as configured for this cluster";
@@ -26,6 +26,15 @@ public class QuboleUsabilityHelper {
   private static final String PARA_TYPE_TEXT = "TEXT";
   private static final String PARA_OUTPUT_REMOVED_FLAG = "outputRemoved";
 
+  private static final Logger LOG = LoggerFactory.getLogger(QuboleUsabilityHelper.class);
+
+  static {
+    try {
+      PARAGRAPH_OUTPUT_LIMIT = Integer.parseInt(PARAGRAPH_OUTPUT_LIMIT_STR);
+    } catch (NumberFormatException ne) {
+      LOG.info("Not able to set output size limit.", ne);
+    }
+  }
 
   public static Note getTrimmedNote(Note note) {
     GsonBuilder gsonBuilder = new GsonBuilder();
