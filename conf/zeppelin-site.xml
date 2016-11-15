@@ -60,4 +60,11 @@
   <value>600000</value>
   <description>Frequency at which interpreters should be synced, in milliseconds</description>
 </property>
+
+<property>
+  <name>zeppelin.refresh.acl.batch.size</name>
+  <value>20</value>
+  <description>Size of batch call to tapp to refresh ACLs. Valid values are from 1, 2 ... 20.</description>
+</property>
+
 </configuration>

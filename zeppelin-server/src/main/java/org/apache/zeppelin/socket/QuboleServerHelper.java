@@ -29,6 +29,9 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import static  org.apache.zeppelin.socket.QuboleACLHelper.Operation.READ;
+import static  org.apache.zeppelin.socket.QuboleACLHelper.Operation.WRITE;
+
 /** 
  * Qubole Helper 
  */
@@ -64,6 +67,10 @@ public class QuboleServerHelper {
    */
   public static Response fetch(HttpServletRequest request,
       Notebook notebook, String noteId) {
+
+    if (!QuboleACLHelper.isOperationAllowed(noteId, request, notebook, READ)) {
+      return new JsonResponse<>(Status.FORBIDDEN).build();
+    }
     String denyCommitMessage = noteValidForCommit(request, notebook, noteId);
 
     if (denyCommitMessage != null) {
@@ -87,7 +94,12 @@ public class QuboleServerHelper {
    * this to all connected users, so that
    * all notes are updated to the latest content.
    */
-  public static Response checkout(Notebook notebook, String noteId, String data) {
+  public static Response checkout(Notebook notebook, String noteId,
+                                  String data, HttpServletRequest request) {
+    if (!QuboleACLHelper.isOperationAllowed(noteId, request, notebook, WRITE)) {
+      return new JsonResponse<>(Status.FORBIDDEN).build();
+    }
+
     if (isNoteRunning(notebook, noteId)) {
       return new JsonResponse<>(Status.FORBIDDEN,
           "Cannot re-store while notebook is running").build();

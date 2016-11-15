@@ -438,6 +438,16 @@ public class ZeppelinConfiguration extends XMLConfiguration {
     return getBoolean(ConfVars.ZEPPELIN_USE_JDBC_ALIAS);
   }
 
+  public int getBatchSizeForRefreshACLCallToTapp() {
+    int size = getInt(ConfVars.ZEPPELIN_REFRESH_ACLS_BATCH_SIZE);
+    if (size < 1) {
+      return 1;
+    } else if (size > 20) {
+      return 20;
+    }
+    return size;
+  }
+
   public Map<String, String> dumpConfigurations(ZeppelinConfiguration conf,
                                                 ConfigurationKeyPredicate predicate) {
     Map<String, String> configurations = new HashMap<>();
@@ -561,8 +571,8 @@ public class ZeppelinConfiguration extends XMLConfiguration {
     ZEPPELIN_WEBSOCKET_MAX_TEXT_MESSAGE_SIZE("zeppelin.websocket.max.text.message.size", "1024000"),
     ZEPPELIN_USE_JDBC_ALIAS("zeppelin.use.jdbc.alias", true),
     ZEPPELIN_NOTEBOOK_SYNC_FREQUENCY("zeppelin.notebooks.sync.frequency", 120000),
-    ZEPPELIN_INTERPRETERS_SYNC_FREQUENCY("zeppelin.interpreters.sync.frequency", 600000);
-
+    ZEPPELIN_INTERPRETERS_SYNC_FREQUENCY("zeppelin.interpreters.sync.frequency", 600000),
+    ZEPPELIN_REFRESH_ACLS_BATCH_SIZE("zeppelin.refresh.acl.batch.size", 20);
     private String varName;
     @SuppressWarnings("rawtypes")
     private Class varClass;

@@ -10,6 +10,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.HttpURLConnection;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,6 +34,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.zeppelin.conf.ZeppelinConfiguration;
 import org.apache.zeppelin.notebook.Note;
 import org.apache.zeppelin.notebook.Notebook;
@@ -65,14 +67,13 @@ public class QuboleUtil {
   private static final String confLoc = System.getenv("INTERPRETER_CONF_LOC");
   private static final String opsApiPath = "/opsapi/v1/zeppelin";
   private static final String opsApiPathV2 = "/opsapi/v2/zeppelin";
+  private static final String permissionPath = "/opsapi/v2/list_access_perms";
   private static final String enable_eventbus = System.getenv("ENABLE_EVENTBUS");
   private static final String eventbus_url = System.getenv("EVENTBUS_URL");
   private static final String clusterId = System.getenv("CLUSTER_ID");
   private static final String clusterTag = System.getenv("CLUSTER_TAG");
   private static final ZeppelinConfiguration zepConfig = ZeppelinConfiguration.create();
 
-  public static final String SOURCE = "source";
-  public static final String JOBSERVER = "JobServer";
   public static final String INTERPRETER_SETTINGS = "interpreterSettings";
   public static final String PROPERTIES = "properties";
   private static final ExecutorService executorService =  Executors.newFixedThreadPool(5);
@@ -81,6 +82,9 @@ public class QuboleUtil {
   private static final ExecutorService s3Executor = Executors.newFixedThreadPool(5);
 
   public static final String s3cmd = "/usr/bin/s3cmd -c /usr/lib/hustler/s3cfg ";
+  public static final String JOBSERVER = "JobServer";
+  public static final String SOURCE = "source";
+
   /**
    * make opsapi call to qubole rails tier to convey creation of new note
    **/
@@ -202,6 +206,13 @@ public class QuboleUtil {
     }
   }
 
+  public static HttpURLConnection getPermissions(List<Map<String, String>> map) {
+    Map<String, String> params = new HashMap<>();
+    Gson gson = new Gson();
+    params.put("json", gson.toJson(map));
+    return sendRequestToQuboleRails(permissionPath, params, "GET", 1);
+  }
+
   /**
    * send events to web tier
    */
@@ -221,14 +232,24 @@ public class QuboleUtil {
     int retries = numRetries;
     while (retries > 0) {
       try {
-        HttpURLConnection connection = (HttpURLConnection) (new URL(getQuboleBaseURL() + apiPath))
-            .openConnection();
+        if (retries != numRetries) {
+          LOG.info("Waiting for 5 seconds");
+          Thread.sleep(5000);
+        }
+        URIBuilder uriBuilder = new URIBuilder(getQuboleBaseURL() + apiPath);
+        if ("GET".equalsIgnoreCase(requestMethod) && params != null) {
+          for (String key: params.keySet()) {
+            uriBuilder.addParameter(key, params.get(key));
+          }
+        }
+        URL url = (URL) uriBuilder.build().toURL();
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestProperty("Content-Type", "application/json");
         connection.setRequestProperty("Accept", "application/json");
         connection.setRequestProperty("X-AUTH-TOKEN", getQuboleApiToken());
         connection.setRequestMethod(requestMethod);
         connection.setDoOutput(true);
-        if (params != null) {
+        if (!"GET".equalsIgnoreCase(requestMethod) && params != null) {
           Gson gson = new Gson();
           String jsonData = gson.toJson(params);
           OutputStreamWriter out = new OutputStreamWriter(connection.getOutputStream());
@@ -242,10 +263,9 @@ public class QuboleUtil {
           return connection;
         } else {
           LOG.info(responseCode + " error in making opsapi call to rails");
-          LOG.info("Waiting for 5 seconds");
-          Thread.sleep(5000);
         }
-      } catch (IOException | InterruptedException e) {
+        return connection;
+      } catch (IOException | InterruptedException | URISyntaxException e) {
         LOG.info(e.toString());
       }
       retries--;
@@ -463,7 +483,7 @@ public class QuboleUtil {
     if (FEATURE_DISABLED) {
       return;
     }
-    String apiPath = opsApiPath;
+    String apiPath = opsApiPathV2;
     LOG.info("Making GET request to " + apiPath + " to update notebook");
 
     HttpURLConnection connection = sendRequestToQuboleRails(apiPath, null, "GET");
@@ -601,5 +621,27 @@ public class QuboleUtil {
         QuboleUtil.putInterpretersToS3();
       }
     }, 0, interpreterSyncFrequency, TimeUnit.MILLISECONDS);
+  }
+
+  public static String getResponseFromConnection(HttpURLConnection conn) throws Exception {
+    int responseCode = conn.getResponseCode();
+    StringBuilder builder = new StringBuilder();
+    InputStream inputStream;
+    if (responseCode == 200) {
+      inputStream = conn.getInputStream();
+    } else {
+      inputStream = conn.getErrorStream();
+    }
+    BufferedReader bis = new BufferedReader(new InputStreamReader(inputStream));
+    String tmpStr;
+    while ((tmpStr = bis.readLine()) != null) {
+      builder.append(tmpStr);
+    }
+    String response = builder.toString();
+
+    if (responseCode != 200) {
+      throw new Exception(response);
+    }
+    return response;
   }
 }

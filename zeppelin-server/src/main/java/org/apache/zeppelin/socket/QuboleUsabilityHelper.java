@@ -14,6 +14,9 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.internal.StringMap;
 import com.google.gson.stream.JsonReader;
 
+/** 
+ * Qubole Helper 
+ */
 public class QuboleUsabilityHelper {
   private static final String PARAGRAPH_OUTPUT_LIMIT_STR = 
       System.getenv("ZEPPELIN_OUTPUT_SIZE_LIMIT");

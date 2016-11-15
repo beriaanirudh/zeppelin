@@ -17,6 +17,7 @@
 
 package org.apache.zeppelin.rest;
 
+import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import org.apache.zeppelin.user.Credentials;
@@ -62,6 +63,7 @@ public class CredentialRestApi {
    */
   @PUT
   public Response putCredentials(String message) throws IOException {
+    /*
     Map<String, String> messageMap = gson.fromJson(message,
       new TypeToken<Map<String, String>>(){}.getType());
     String entity = messageMap.get("entity");
@@ -77,7 +79,8 @@ public class CredentialRestApi {
     UserCredentials uc = credentials.getUserCredentials(user);
     uc.putUsernamePassword(entity, new UsernamePassword(username, password));
     credentials.putUserCredentials(user, uc);
-    return new JsonResponse(Status.OK, "", "").build();
+     */
+    return new JsonResponse(Status.FORBIDDEN).build();
   }
 
 }

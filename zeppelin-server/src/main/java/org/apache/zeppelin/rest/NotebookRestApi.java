@@ -62,6 +62,7 @@ import org.apache.zeppelin.server.JsonResponse;
 import org.apache.zeppelin.socket.NotebookServer;
 import org.apache.zeppelin.socket.QuboleServerHelper;
 import org.apache.zeppelin.user.AuthenticationInfo;
+import org.apache.zeppelin.socket.QuboleACLHelper;
 import org.apache.zeppelin.utils.SecurityUtils;
 import org.quartz.CronExpression;
 import org.apache.zeppelin.server.ZeppelinServer;
@@ -79,6 +80,11 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.GsonBuilder;
+
+
+import static org.apache.zeppelin.socket.QuboleACLHelper.Operation.READ;
+import static org.apache.zeppelin.socket.QuboleACLHelper.Operation.WRITE;
+import static org.apache.zeppelin.socket.QuboleACLHelper.Operation.DELETE;
 
 /**
  * Rest api endpoint for the noteBook.
@@ -110,8 +116,9 @@ public class NotebookRestApi {
   @Path("{noteId}/permissions")
   @ZeppelinApi
   public Response getNotePermissions(@PathParam("noteId") String noteId) {
+    /*
     Note note = notebook.getNote(noteId);
-    HashMap<String, Set<String>> permissionsMap = new HashMap();
+    HashMap<String, Set<String>> permissionsMap = new HashMap<>();
     permissionsMap.put("owners", notebookAuthorization.getOwners(noteId));
     permissionsMap.put("readers", notebookAuthorization.getReaders(noteId));
     permissionsMap.put("writers", notebookAuthorization.getWriters(noteId));
@@ -123,8 +130,11 @@ public class NotebookRestApi {
     LOG.info("Cannot change permissions. Connection owners {}. Allowed owners {}",
             current.toString(), allowed.toString());
     return "Insufficient privileges to change permissions.\n\n" +
-            "Allowed owners: " + allowed.toString() + "\n\n" +
-            "User belongs to: " + current.toString();
+           "Allowed owners: " + allowed.toString() + "\n\n" +
+           "User belongs to: " + current.toString();
+  }
+    */
+    return new JsonResponse<>(Status.FORBIDDEN).build();
   }
 
   /**
@@ -135,8 +145,12 @@ public class NotebookRestApi {
   @ZeppelinApi
   public Response putNotePermissions(@PathParam("noteId") String noteId, String req)
       throws IOException {
-    HashMap<String, HashSet> permMap = gson.fromJson(req,
-            new TypeToken<HashMap<String, HashSet>>(){}.getType());
+    /**
+     * TODO(jl): Fixed the type of HashSet
+     * https://issues.apache.org/jira/browse/ZEPPELIN-1162
+     *
+    HashMap<String, HashSet<String>> permMap = gson.fromJson(req,
+            new TypeToken<HashMap<String, HashSet<String>>>() {}.getType());
     Note note = notebook.getNote(noteId);
     String principal = SecurityUtils.getPrincipal();
     HashSet<String> roles = SecurityUtils.getRoles();
@@ -145,8 +159,7 @@ public class NotebookRestApi {
             principal,
             permMap.get("owners"),
             permMap.get("readers"),
-            permMap.get("writers")
-    );
+            permMap.get("writers"));
 
     HashSet<String> userAndRoles = new HashSet<String>();
     userAndRoles.add(principal);
@@ -156,9 +169,9 @@ public class NotebookRestApi {
               notebookAuthorization.getOwners(noteId))).build();
     }
 
-    HashSet readers = permMap.get("readers");
-    HashSet owners = permMap.get("owners");
-    HashSet writers = permMap.get("writers");
+    HashSet<> readers = permMap.get("readers");
+    HashSet<> owners = permMap.get("owners");
+    HashSet<> writers = permMap.get("writers");
     // Set readers, if writers and owners is empty -> set to user requesting the change
     if (readers != null && !readers.isEmpty()) {
       if (writers.isEmpty()) {
@@ -186,6 +199,8 @@ public class NotebookRestApi {
     note.persist(subject);
     notebookServer.broadcastNote(note);
     return new JsonResponse<>(Status.OK).build();
+    */
+    return new JsonResponse<>(Status.FORBIDDEN).build();
   }
 
   /**
@@ -249,18 +264,26 @@ public class NotebookRestApi {
   @Path("/")
   @ZeppelinApi
   public Response getNotebookList() throws IOException {
+    return new JsonResponse<>(Status.FORBIDDEN).build();
+    /*
     AuthenticationInfo subject = new AuthenticationInfo(SecurityUtils.getPrincipal());
     List<Map<String, String>> notesInfo = notebookServer.generateNotebooksInfo(false, subject);
     return new JsonResponse<>(Status.OK, "", notesInfo ).build();
+    */
   }
 
   @GET
   @Path("{notebookId}")
   @ZeppelinApi
-  public Response getNotebook(@PathParam("notebookId") String notebookId) throws IOException {
+  public Response getNotebook(@Context HttpServletRequest request,
+                              @PathParam("notebookId") String notebookId) throws IOException {
     Note note = notebook.getNote(notebookId);
     if (note == null) {
       return new JsonResponse<>(Status.NOT_FOUND, "note not found.").build();
+    }
+
+    if (!QuboleACLHelper.isOperationAllowed(notebookId, request, notebook, READ)) {
+      return new JsonResponse<>(Status.FORBIDDEN).build();
     }
 
     return new JsonResponse<>(Status.OK, "", note).build();
@@ -276,7 +299,11 @@ public class NotebookRestApi {
   @GET
   @Path("export/{id}")
   @ZeppelinApi
-  public Response exportNoteBook(@PathParam("id") String noteId) throws IOException {
+  public Response exportNoteBook(@Context HttpServletRequest request,
+                                 @PathParam("id") String noteId) throws IOException {
+    if (!QuboleACLHelper.isOperationAllowed(noteId, request, notebook, READ)) {
+      return new JsonResponse<>(Status.FORBIDDEN).build();
+    }
     String exportJson = notebook.exportNote(noteId);
     return new JsonResponse(Status.OK, "", exportJson).build();
   }
@@ -298,7 +325,12 @@ public class NotebookRestApi {
   @POST
   @Path("import")
   @ZeppelinApi
-  public Response importNotebook(String req) throws IOException {
+  public Response importNotebook(@Context HttpServletRequest request,
+                                  String req) throws IOException {
+    if (!QuboleACLHelper.canCreateNote(request)) {
+      return new JsonResponse<>(Status.FORBIDDEN).build();
+    }
+
     AuthenticationInfo subject = new AuthenticationInfo(SecurityUtils.getPrincipal());
     Note newNote = notebook.importNote(req, null, subject);
     return new JsonResponse<>(Status.CREATED, "", newNote.getId()).build();
@@ -313,7 +345,12 @@ public class NotebookRestApi {
   @POST
   @Path("/")
   @ZeppelinApi
-  public Response createNote(String message) throws IOException {
+  public Response createNote(@Context HttpServletRequest req, String message)
+      throws IOException {
+    if (!QuboleACLHelper.canCreateNote(req)) {
+      return new JsonResponse<>(Status.FORBIDDEN).build();
+    }
+
     LOG.info("Create new notebook by JSON {}" , message);
     NewNotebookRequest request = gson.fromJson(message,
         NewNotebookRequest.class);
@@ -344,7 +381,7 @@ public class NotebookRestApi {
   @Path("note/checkout/{noteId}")
   public Response checkout(@Context HttpServletRequest request,
       @PathParam("noteId") String noteId, String data) {
-    return QuboleServerHelper.checkout(notebook, noteId, data);
+    return QuboleServerHelper.checkout(notebook, noteId, data, request);
   }
 
   /**
@@ -356,7 +393,12 @@ public class NotebookRestApi {
   @DELETE
   @Path("note/{notebookId}")
   @ZeppelinApi
-  public Response deleteNote(@PathParam("notebookId") String notebookId) throws IOException {
+  public Response deleteNote(@Context HttpServletRequest request,
+                             @PathParam("notebookId") String notebookId) throws IOException {
+    if (!QuboleACLHelper.isOperationAllowed(notebookId, request, notebook, DELETE)) {
+      return new JsonResponse<>(Status.FORBIDDEN).build();
+    }
+
     LOG.info("Delete notebook {} ", notebookId);
     AuthenticationInfo subject = new AuthenticationInfo(SecurityUtils.getPrincipal());
     if (!(notebookId.isEmpty())) {
@@ -366,6 +408,7 @@ public class NotebookRestApi {
       }
     }
 
+    QuboleACLHelper.onNoteDelete(notebookId);
     notebookServer.broadcastNoteList(subject);
     return new JsonResponse<>(Status.OK, "").build();
   }
@@ -379,8 +422,13 @@ public class NotebookRestApi {
   @POST
   @Path("{notebookId}")
   @ZeppelinApi
-  public Response cloneNote(@PathParam("notebookId") String notebookId, String message) throws
+  public Response cloneNote(@Context HttpServletRequest req,
+                            @PathParam("notebookId") String notebookId, String message) throws
       IOException, CloneNotSupportedException, IllegalArgumentException {
+    if (!QuboleACLHelper.isOperationAllowed(notebookId, req, notebook, WRITE)) {
+      return new JsonResponse<>(Status.FORBIDDEN).build();
+    }
+
     LOG.info("clone notebook by JSON {}" , message);
     NewNotebookRequest request = gson.fromJson(message,
         NewNotebookRequest.class);
@@ -401,8 +449,12 @@ public class NotebookRestApi {
   @POST
   @Path("{notebookId}/paragraph")
   @ZeppelinApi
-  public Response insertParagraph(@PathParam("notebookId") String notebookId, String message)
+  public Response insertParagraph(@Context HttpServletRequest req,
+                                  @PathParam("notebookId") String notebookId, String message)
       throws IOException {
+    if (!QuboleACLHelper.isOperationAllowed(notebookId, req, notebook, WRITE)) {
+      return new JsonResponse<>(Status.FORBIDDEN).build();
+    }
     LOG.info("insert paragraph {} {}", notebookId, message);
 
     Note note = notebook.getNote(notebookId);
@@ -437,8 +489,13 @@ public class NotebookRestApi {
   @GET
   @Path("{notebookId}/paragraph/{paragraphId}")
   @ZeppelinApi
-  public Response getParagraph(@PathParam("notebookId") String notebookId,
+  public Response getParagraph(@Context HttpServletRequest request,
+                               @PathParam("notebookId") String notebookId,
                                @PathParam("paragraphId") String paragraphId) throws IOException {
+    if (!QuboleACLHelper.isOperationAllowed(notebookId, request, notebook, READ)) {
+      return new JsonResponse<>(Status.FORBIDDEN).build();
+    }
+
     LOG.info("get paragraph {} {}", notebookId, paragraphId);
 
     Note note = notebook.getNote(notebookId);
@@ -463,9 +520,14 @@ public class NotebookRestApi {
   @POST
   @Path("{notebookId}/paragraph/{paragraphId}/move/{newIndex}")
   @ZeppelinApi
-  public Response moveParagraph(@PathParam("notebookId") String notebookId,
+  public Response moveParagraph(@Context HttpServletRequest request,
+                                @PathParam("notebookId") String notebookId,
                                 @PathParam("paragraphId") String paragraphId,
                                 @PathParam("newIndex") String newIndex) throws IOException {
+    if (!QuboleACLHelper.isOperationAllowed(notebookId, request, notebook, WRITE)) {
+      return new JsonResponse<>(Status.FORBIDDEN).build();
+    }
+
     LOG.info("move paragraph {} {} {}", notebookId, paragraphId, newIndex);
 
     Note note = notebook.getNote(notebookId);
@@ -500,8 +562,13 @@ public class NotebookRestApi {
   @DELETE
   @Path("{notebookId}/paragraph/{paragraphId}")
   @ZeppelinApi
-  public Response deleteParagraph(@PathParam("notebookId") String notebookId,
+  public Response deleteParagraph(@Context HttpServletRequest request,
+                                  @PathParam("notebookId") String notebookId,
                                   @PathParam("paragraphId") String paragraphId) throws IOException {
+    if (!QuboleACLHelper.isOperationAllowed(notebookId, request, notebook, DELETE)) {
+      return new JsonResponse<>(Status.FORBIDDEN).build();
+    }
+
     LOG.info("delete paragraph {} {}", notebookId, paragraphId);
 
     Note note = notebook.getNote(notebookId);
@@ -531,8 +598,12 @@ public class NotebookRestApi {
   @POST
   @Path("job/{notebookId}")
   @ZeppelinApi
-  public Response runNoteJobs(@PathParam("notebookId") String notebookId) throws
+  public Response runNoteJobs(@Context HttpServletRequest request,
+                              @PathParam("notebookId") String notebookId) throws
       IOException, IllegalArgumentException {
+    if (!QuboleACLHelper.isOperationAllowed(notebookId, request, notebook, WRITE)) {
+      return new JsonResponse<>(Status.FORBIDDEN).build();
+    }
     LOG.info("run notebook jobs {} ", notebookId);
     Note note = notebook.getNote(notebookId);
     if (note == null) {
@@ -559,9 +630,14 @@ public class NotebookRestApi {
   @DELETE
   @Path("job/{notebookId}")
   @ZeppelinApi
-  public Response stopNoteJobs(@PathParam("notebookId") String notebookId) throws
+  public Response stopNoteJobs(@Context HttpServletRequest request,
+                               @PathParam("notebookId") String notebookId) throws
       IOException, IllegalArgumentException {
     LOG.info("stop notebook jobs {} ", notebookId);
+    if (!QuboleACLHelper.isOperationAllowed(notebookId, request, notebook, WRITE)) {
+      return new JsonResponse<>(Status.FORBIDDEN).build();
+    }
+
     Note note = notebook.getNote(notebookId);
     if (note == null) {
       return new JsonResponse<>(Status.NOT_FOUND, "note not found.").build();
@@ -584,9 +660,14 @@ public class NotebookRestApi {
   @GET
   @Path("job/{notebookId}")
   @ZeppelinApi
-  public Response getNoteJobStatus(@PathParam("notebookId") String notebookId) throws
+  public Response getNoteJobStatus(@Context HttpServletRequest request,
+                                   @PathParam("notebookId") String notebookId) throws
       IOException, IllegalArgumentException {
     LOG.info("get notebook job status.");
+    if (!QuboleACLHelper.isOperationAllowed(notebookId, request, notebook, READ)) {
+      return new JsonResponse<>(Status.FORBIDDEN).build();
+    }
+
     Note note = notebook.getNote(notebookId);
     if (note == null) {
       return new JsonResponse<>(Status.NOT_FOUND, "note not found.").build();
@@ -606,11 +687,16 @@ public class NotebookRestApi {
   @POST
   @Path("job/{notebookId}/{paragraphId}")
   @ZeppelinApi
-  public Response runParagraph(@PathParam("notebookId") String notebookId, 
+  public Response runParagraph(@Context HttpServletRequest req,
+                               @PathParam("notebookId") String notebookId, 
                                @PathParam("paragraphId") String paragraphId,
                                String message) throws
                                IOException, IllegalArgumentException {
     LOG.info("run paragraph job {} {} {}", notebookId, paragraphId, message);
+    if (!QuboleACLHelper.isOperationAllowed(notebookId, req, notebook, WRITE)) {
+      return new JsonResponse<>(Status.FORBIDDEN).build();
+    }
+
 
     Note note = notebook.getNote(notebookId);
     if (note == null) {
@@ -647,10 +733,14 @@ public class NotebookRestApi {
   @DELETE
   @Path("job/{notebookId}/{paragraphId}")
   @ZeppelinApi
-  public Response stopParagraph(@PathParam("notebookId") String notebookId, 
+  public Response stopParagraph(@Context HttpServletRequest req,
+                                @PathParam("notebookId") String notebookId, 
                                 @PathParam("paragraphId") String paragraphId) throws
                                 IOException, IllegalArgumentException {
     LOG.info("stop paragraph job {} ", notebookId);
+    if (!QuboleACLHelper.isOperationAllowed(notebookId, req, notebook, WRITE)) {
+      return new JsonResponse<>(Status.FORBIDDEN).build();
+    }
     Note note = notebook.getNote(notebookId);
     if (note == null) {
       return new JsonResponse<>(Status.NOT_FOUND, "note not found.").build();
@@ -673,9 +763,13 @@ public class NotebookRestApi {
   @POST
   @Path("cron/{notebookId}")
   @ZeppelinApi
-  public Response registerCronJob(@PathParam("notebookId") String notebookId, String message) throws
+  public Response registerCronJob(@Context HttpServletRequest req,
+                                  @PathParam("notebookId") String notebookId, String message) throws
       IOException, IllegalArgumentException {
     LOG.info("Register cron job note={} request cron msg={}", notebookId, message);
+    if (!QuboleACLHelper.isOperationAllowed(notebookId, req, notebook, WRITE)) {
+      return new JsonResponse<>(Status.FORBIDDEN).build();
+    }
 
     CronRequest request = gson.fromJson(message,
                           CronRequest.class);
@@ -706,9 +800,14 @@ public class NotebookRestApi {
   @DELETE
   @Path("cron/{notebookId}")
   @ZeppelinApi
-  public Response removeCronJob(@PathParam("notebookId") String notebookId) throws
+  public Response removeCronJob(@Context HttpServletRequest req,
+                                @PathParam("notebookId") String notebookId) throws
       IOException, IllegalArgumentException {
     LOG.info("Remove cron job note {}", notebookId);
+
+    if (!QuboleACLHelper.isOperationAllowed(notebookId, req, notebook, WRITE)) {
+      return new JsonResponse<>(Status.FORBIDDEN).build();
+    }
 
     Note note = notebook.getNote(notebookId);
     if (note == null) {
@@ -732,9 +831,15 @@ public class NotebookRestApi {
   @GET
   @Path("cron/{notebookId}")
   @ZeppelinApi
-  public Response getCronJob(@PathParam("notebookId") String notebookId) throws
+  public Response getCronJob(@Context HttpServletRequest req,
+                             @PathParam("notebookId") String notebookId) throws
       IOException, IllegalArgumentException {
     LOG.info("Get cron job note {}", notebookId);
+
+    if (!QuboleACLHelper.isOperationAllowed(notebookId, req, notebook, READ)) {
+      return new JsonResponse<>(Status.FORBIDDEN).build();
+    }
+
 
     Note note = notebook.getNote(notebookId);
     if (note == null) {
@@ -798,6 +903,9 @@ public class NotebookRestApi {
   @Path("search")
   @ZeppelinApi
   public Response search(@QueryParam("q") String queryTerm) {
+    //should this be allowed?
+    return new JsonResponse<>(Status.FORBIDDEN).build();
+    /*
     LOG.info("Searching notebooks for: {}", queryTerm);
     String principal = SecurityUtils.getPrincipal();
     HashSet<String> roles = SecurityUtils.getRoles();
@@ -817,11 +925,15 @@ public class NotebookRestApi {
     }
     LOG.info("{} notebooks found", notebooksFound.size());
     return new JsonResponse<>(Status.OK, notebooksFound).build();
+    */
   }
 
   @GET
   @Path("note/{noteId}")
-  public Response getNote(@PathParam("noteId") String noteId) {
+  public Response getNote(@Context HttpServletRequest req, @PathParam("noteId") String noteId) {
+    if (!QuboleACLHelper.isOperationAllowed(noteId, req, notebook, READ)) {
+      return new JsonResponse<>(Status.FORBIDDEN).build();
+    }
     if (noteId == null || noteId.trim().length() == 0) {
       return new JsonResponse(Status.NOT_FOUND, "", noteId).build();
     }
@@ -834,8 +946,13 @@ public class NotebookRestApi {
 
   @POST
   @Path("note/{noteId}/paragraph")
-  public Response createAndRunParagraph(@PathParam("noteId") String noteId,
+  public Response createAndRunParagraph(@Context HttpServletRequest req,
+                                        @PathParam("noteId") String noteId,
                                         String message) {
+    if (!QuboleACLHelper.isOperationAllowed(noteId, req, notebook, WRITE)) {
+      return new JsonResponse<>(Status.FORBIDDEN).build();
+    }
+
     NewParagraphRunRequest request = gson.fromJson(message, NewParagraphRunRequest.class);
     if (request == null) {
       return new JsonResponse(
@@ -875,8 +992,13 @@ public class NotebookRestApi {
 
   @PUT
   @Path("note/{noteId}/paragraph/{paragraphId}/kill")
-  public Response cancelParagraph(@PathParam("noteId") String noteId,
+  public Response cancelParagraph(@Context HttpServletRequest req,
+                                  @PathParam("noteId") String noteId,
                                   @PathParam("paragraphId") String paragraphId) {
+    if (!QuboleACLHelper.isOperationAllowed(noteId, req, notebook, WRITE)) {
+      return new JsonResponse<>(Status.FORBIDDEN).build();
+    }
+
     Note note = notebook.getNote(noteId);
     if (note == null) {
       return new JsonResponse(Status.NOT_FOUND, "Note not found:", noteId).build();
@@ -907,6 +1029,7 @@ public class NotebookRestApi {
   public Response associateNote(@Context HttpServletRequest request,
                         @PathParam("noteId") String noteId, String req)
       throws IOException {
+
     Note note = notebook.getNote(noteId);
     if (note == null) {
       Map<String, String> noteAttributes = QuboleNoteAttributes.getNoteAttributesFromJSON(req);
@@ -916,6 +1039,11 @@ public class NotebookRestApi {
         LOG.error("Associate failed for note " + noteId);
         return new JsonResponse<>(Status.NOT_FOUND).build();
       }
+      if (!QuboleACLHelper.isOperationAllowed(noteId, request, notebook, WRITE)) {
+        notebook.removeNote(noteId, null);
+        return new JsonResponse<>(Status.FORBIDDEN).build();
+      }
+
       ZeppelinServer.notebookWsServer.refresh(note);
       LOG.info("Succesfully processed associate request for note " + noteId);
     }
@@ -932,11 +1060,19 @@ public class NotebookRestApi {
    */
   @POST
   @Path("note")
-  public Response createNote(@QueryParam("name") String name,
+  public Response createNote(@Context HttpServletRequest request,
+      @QueryParam("name") String name,
       @QueryParam("sourceNoteId") String sourceNoteId,
       @QueryParam("source") String source,
       @QueryParam("interpreterIds") List<String> interpreterIds)
       throws IOException {
+    //All operations for JobServer are allowed.
+    /*
+    if (!QuboleACLHelper.canCreateNote(request)) {
+      return new JsonResponse<>(Status.FORBIDDEN).build();
+    }
+    */
+
     // Create the JSON Object
     JsonObject propObj = new JsonObject();
 
@@ -964,7 +1100,6 @@ public class NotebookRestApi {
     obj.put("id", note.id());
     return new JsonResponse(Status.CREATED, null, obj).build();
   }
-
   /**
    *  update note
    * @throws IOException
@@ -972,7 +1107,12 @@ public class NotebookRestApi {
    */
   @PUT
   @Path("note/{noteId}")
-  public Response updateNote(@PathParam("noteId") String noteId, String req) throws IOException {
+  public Response updateNote(@Context HttpServletRequest request,
+                             @PathParam("noteId") String noteId, String req) throws IOException {
+    if (!QuboleACLHelper.isOperationAllowed(noteId, request, notebook, WRITE)) {
+      return new JsonResponse<>(Status.FORBIDDEN).build();
+    }
+
     // Create the JSON Object
     JsonObject propObj = (JsonObject) new JsonParser().parse(req);
     JsonElement jsonElement = propObj.get("name");
@@ -994,4 +1134,27 @@ public class NotebookRestApi {
     return QuboleServerHelper.receiveAndSendQlog(req, notebook);
   }
 
+  /**
+   * This API is used by Qubole-Tapp to notify
+   * zeppelin that some permission (roles, groups or
+   * users belonging to groups) has changed and zeppelin
+   * needs to refresh ACLs from tapp.
+   */
+  @GET
+  @Path("refresh_acl")
+  public Response refreshQuboleAcls(String req) throws IOException {
+    QuboleACLHelper.refreshACLs(notebook, null);
+    return new JsonResponse<>(Status.OK).build();
+  }
+
+  /** In case only a notebook related acl change,
+   *  this API can be called to refresh only the acls
+   *  related to that notebook.
+   */
+  @GET
+  @Path("note/refresh_acl/{noteId}")
+  public Response refreshQuboleAclsForNotebook(@PathParam("noteId") String noteId) {
+    QuboleACLHelper.refreshACLs(notebook, noteId);
+    return new JsonResponse<>(Status.OK).build();
+  }
 }

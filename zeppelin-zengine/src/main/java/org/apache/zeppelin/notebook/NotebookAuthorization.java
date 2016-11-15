@@ -35,6 +35,7 @@ public class NotebookAuthorization {
   /*
    * { "note1": { "owners": ["u1"], "readers": ["u1", "u2"], "writers": ["u1"] },  "note2": ... } }
    */
+  private final Boolean QUBOLE_LOCK = false;
   private Map<String, Map<String, Set<String>>> authInfo = new HashMap<>();
   private ZeppelinConfiguration conf;
   private Gson gson;
@@ -42,6 +43,7 @@ public class NotebookAuthorization {
 
   public NotebookAuthorization(ZeppelinConfiguration conf) {
     this.conf = conf;
+    /*
     filePath = conf.getNotebookAuthorizationPath();
     GsonBuilder builder = new GsonBuilder();
     builder.setPrettyPrinting();
@@ -51,6 +53,7 @@ public class NotebookAuthorization {
     } catch (IOException e) {
       LOG.error("Error loading NotebookAuthorization", e);
     }
+    */
   }
 
   private void loadFromFile() throws IOException {
@@ -78,6 +81,7 @@ public class NotebookAuthorization {
   }
 
   private void saveToFile() {
+    /*
     String jsonString;
 
     synchronized (authInfo) {
@@ -100,6 +104,7 @@ public class NotebookAuthorization {
     } catch (IOException e) {
       LOG.error("Error saving notebook authorization file: " + e.getMessage());
     }
+    */
   }
 
   private Set<String> validateUser(Set<String> users) {
@@ -120,6 +125,7 @@ public class NotebookAuthorization {
       noteAuthInfo.put("owners", new LinkedHashSet(entities));
       noteAuthInfo.put("readers", new LinkedHashSet());
       noteAuthInfo.put("writers", new LinkedHashSet());
+      noteAuthInfo.put("deleters", new LinkedHashSet());
     } else {
       noteAuthInfo.put("owners", new LinkedHashSet(entities));
     }
@@ -135,6 +141,7 @@ public class NotebookAuthorization {
       noteAuthInfo.put("owners", new LinkedHashSet());
       noteAuthInfo.put("readers", new LinkedHashSet(entities));
       noteAuthInfo.put("writers", new LinkedHashSet());
+      noteAuthInfo.put("deleters", new LinkedHashSet());
     } else {
       noteAuthInfo.put("readers", new LinkedHashSet(entities));
     }
@@ -150,6 +157,7 @@ public class NotebookAuthorization {
       noteAuthInfo.put("owners", new LinkedHashSet());
       noteAuthInfo.put("readers", new LinkedHashSet());
       noteAuthInfo.put("writers", new LinkedHashSet(entities));
+      noteAuthInfo.put("deleters", new LinkedHashSet());
     } else {
       noteAuthInfo.put("writers", new LinkedHashSet(entities));
     }
@@ -199,6 +207,21 @@ public class NotebookAuthorization {
     return entities;
   }
 
+  public Set<String> getDeleters(String noteId) {
+    Map<String, Set<String>> noteAuthInfo = authInfo.get(noteId);
+    Set<String> entities = null;
+    if (noteAuthInfo == null) {
+      entities = new HashSet<String>();
+    } else {
+      entities = noteAuthInfo.get("deleters");
+      if (entities == null) {
+        entities = new HashSet<String>();
+      }
+    }
+    return entities;
+  }
+
+
   public boolean isOwner(String noteId, Set<String> entities) {
     return isMember(entities, getOwners(noteId));
   }
@@ -207,22 +230,53 @@ public class NotebookAuthorization {
     return isMember(entities, getWriters(noteId)) || isMember(entities, getOwners(noteId));
   }
 
+  public boolean isDeleter(String noteId, Set<String> entities) {
+    return isMember(entities, getDeleters(noteId));
+  }
+
   public boolean isReader(String noteId, Set<String> entities) {
     return isMember(entities, getReaders(noteId)) ||
             isMember(entities, getOwners(noteId)) ||
             isMember(entities, getWriters(noteId));
   }
 
-  // return true if b is empty or if (a intersection b) is non-empty
+  // return true only if (a intersection b) is non-empty
   private boolean isMember(Set<String> a, Set<String> b) {
+    // allow all operations is ACLs disabled.
     Set<String> intersection = new HashSet<String>(b);
     intersection.retainAll(a);
-    return (b.isEmpty() || (intersection.size() > 0));
+    return (intersection.size() > 0);
   }
 
   public void removeNote(String noteId) {
     authInfo.remove(noteId);
     saveToFile();
+  }
+
+  public void addPermissionForQubole(String noteId, String qbolUserId, String perm) {
+    synchronized (QUBOLE_LOCK) {
+      Map<String, Set<String>> noteAuthInfo = authInfo.get(noteId);
+      if (noteAuthInfo == null) {
+        noteAuthInfo = new LinkedHashMap();
+        noteAuthInfo.put("owners", new LinkedHashSet());
+        noteAuthInfo.put("readers", new LinkedHashSet());
+        noteAuthInfo.put("writers", new LinkedHashSet());
+        noteAuthInfo.put("deleters", new LinkedHashSet());
+      }
+      Set<String> permSet = noteAuthInfo.get(perm);
+      permSet.add(qbolUserId);
+      authInfo.put(noteId, noteAuthInfo);
+    }
+  }
+
+  public void removePermissionForQubole(String noteId, String qbolUserId, String perm) {
+    synchronized (QUBOLE_LOCK) {
+      Map<String, Set<String>> noteAuthInfo = authInfo.get(noteId);
+      if (noteAuthInfo == null) {
+        return;
+      }
+      noteAuthInfo.get(perm).remove(qbolUserId);
+    }
   }
 
 }

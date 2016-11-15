@@ -65,9 +65,9 @@ angular.module('zeppelinWebApp').factory('websocketEvents', function($rootScope,
           closable: false,
           closeByBackdrop: false,
           closeByKeyboard: false,
-          title: 'Insufficient privileges', 
+          title: 'Sorry !',
           message: data.info.toString(),
-          buttons: [{
+          buttons: [/*{
               label: 'Login',
               action: function(dialog) {
                   dialog.close();
@@ -75,11 +75,13 @@ angular.module('zeppelinWebApp').factory('websocketEvents', function($rootScope,
                     show: 'true'
                   });
               }
-          }, {
-              label: 'Cancel',
+          }, */{
+              label: 'Ok',
               action: function(dialog) {
                   dialog.close();
+                  /*
                   $window.location.replace('/');
+                  */
               }
           }]
       });

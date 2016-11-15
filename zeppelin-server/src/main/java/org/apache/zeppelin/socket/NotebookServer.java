@@ -69,6 +69,16 @@ public class NotebookServer extends WebSocketServlet implements
         RemoteInterpreterProcessListener {
   private static final Logger LOG = LoggerFactory.getLogger(NotebookServer.class);
   Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").create();
+
+  private static final Set<OP> opsNotAllowedInACL = new HashSet<OP>() {{
+      add(OP.NEW_NOTE);
+      add(OP.DEL_NOTE);
+      add(OP.CLONE_NOTE);
+      add(OP.IMPORT_NOTE);
+      add(OP.LIST_NOTES);
+    }
+  };
+
   final Map<String, List<NotebookSocket>> noteSocketMap = new HashMap<>();
   final Queue<NotebookSocket> connectedSockets = new ConcurrentLinkedQueue<>();
 
@@ -125,7 +135,7 @@ public class NotebookServer extends WebSocketServlet implements
           LOG.debug("{} message: invalid ticket {} != {}", messagereceived.op,
               messagereceived.ticket, ticket);
         } else {
-          LOG.warn("{} message: invalid ticket {} != {}", messagereceived.op,
+          LOG.debug("{} message: invalid ticket {} != {}", messagereceived.op,
               messagereceived.ticket, ticket);
         }
         return;
@@ -148,6 +158,14 @@ public class NotebookServer extends WebSocketServlet implements
         }
       }
       AuthenticationInfo subject = new AuthenticationInfo(messagereceived.principal);
+      userAndRoles.add(QuboleServerHelper.getUserForConn(conn));
+
+      if (opsNotAllowedInACL.contains(messagereceived.op)) {
+        conn.send(serializeMessage(new Message(OP.AUTH_INFO).put("info",
+            "Cannot create/delete/import/clone notebooks from Spark-Notebook UI "
+            + "in order to enforce Authorization. Please use notebooks.")));
+        return;
+      }
 
       /** Lets be elegant here */
       switch (messagereceived.op) {
@@ -236,6 +254,7 @@ public class NotebookServer extends WebSocketServlet implements
         .getRemoteAddr(), conn.getRequest().getRemotePort(), code, reason);
     removeConnectionFromAllNote(conn);
     connectedSockets.remove(conn);
+    QuboleACLHelper.onConnectionClose(conn);
   }
 
   protected Message deserializeMessage(String msg) {
@@ -274,6 +293,7 @@ public class NotebookServer extends WebSocketServlet implements
     synchronized (noteSocketMap) {
       List<NotebookSocket> socketList = noteSocketMap.remove(noteId);
     }
+    QuboleACLHelper.onNoteDelete(noteId);
   }
 
   private void removeConnectionFromAllNote(NotebookSocket socket) {
@@ -456,9 +476,8 @@ public class NotebookServer extends WebSocketServlet implements
             op, userAndRoles, allowed);
 
     conn.send(serializeMessage(new Message(OP.AUTH_INFO).put("info",
-            "Insufficient privileges to " + op + " notebook.\n\n" +
-                    "Allowed users or roles: " + allowed.toString() + "\n\n" +
-                    "But the user " + userName + " belongs to: " + userAndRoles.toString())));
+            "You do not have permission to " + op
+                + ". Please contact your system-admin.")));
   }
 
   private void sendNote(NotebookSocket conn, HashSet<String> userAndRoles, Notebook notebook,
@@ -474,6 +493,8 @@ public class NotebookServer extends WebSocketServlet implements
       return;
     }
 
+    QuboleACLHelper.checkAndAddNotebookACL(notebook,
+        QuboleServerHelper.getUserForConn(conn), noteId, conn);
     boolean fetchParas = (boolean) fromMessage.get("fetch");
 
     Note note = notebook.getNote(noteId);
