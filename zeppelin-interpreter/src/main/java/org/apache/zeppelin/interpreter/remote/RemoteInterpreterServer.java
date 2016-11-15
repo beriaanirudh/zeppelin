@@ -444,7 +444,8 @@ public class RemoteInterpreterServer
         gson.fromJson(ric.getGui(), GUI.class),
         interpreterGroup.getAngularObjectRegistry(),
         interpreterGroup.getResourcePool(),
-        contextRunners, createInterpreterOutput(ric.getNoteId(), ric.getParagraphId()));
+        contextRunners, createInterpreterOutput(
+            ric.getNoteId(), ric.getParagraphId()), eventClient);
   }
 
 

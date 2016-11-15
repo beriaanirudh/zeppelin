@@ -800,6 +800,9 @@ public class InterpreterFactory implements InterpreterGroupFactory {
       copyDependenciesFromLocalPath(intpsetting);
       if (intpsetting != null) {
 
+        //clean up metaInfos
+        intpsetting.setInfos(null);
+
         stopJobAllInterpreter(intpsetting);
 
         intpsetting.closeAndRmoveAllInterpreterGroups();

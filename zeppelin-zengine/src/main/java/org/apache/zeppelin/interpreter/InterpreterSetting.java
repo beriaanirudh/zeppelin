@@ -37,6 +37,7 @@ public class InterpreterSetting {
   private String description;
   private Properties properties;
   private transient InterpreterGroupFactory interpreterGroupFactory;
+  private transient Map<String, String> infos; 
 
   // use 'interpreterGroup' as a field name to keep backward compatibility of
   // conf/interpreter.json file format
@@ -215,5 +216,13 @@ public class InterpreterSetting {
 
   public void setInterpreterGroupFactory(InterpreterGroupFactory interpreterGroupFactory) {
     this.interpreterGroupFactory = interpreterGroupFactory;
+  }
+
+  public void setInfos(Map<String, String> infos) {
+    this.infos = infos;
+  }
+
+  public Map<String, String> getInfos() {
+    return infos;
   }
 }

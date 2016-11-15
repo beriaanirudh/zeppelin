@@ -1284,5 +1284,13 @@ public class NotebookServer extends WebSocketServlet implements
     broadcastNote(note);
     broadcastNoteList(null);
   }
+
+  @Override
+  public void onMetaInfosReceived(String settingId, Map<String, String> metaInfos) {
+    InterpreterSetting interpreterSetting = notebook().getInterpreterFactory()
+        .get(settingId);
+    interpreterSetting.setInfos(metaInfos);
+  }
+
 }
 

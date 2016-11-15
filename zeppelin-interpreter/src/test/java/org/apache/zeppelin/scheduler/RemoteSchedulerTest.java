@@ -297,4 +297,9 @@ public class RemoteSchedulerTest implements RemoteInterpreterProcessListener {
   public void onOutputUpdated(String noteId, String paragraphId, String output) {
 
   }
+
+  @Override
+  public void onMetaInfosReceived(String settingId, Map<String, String> metaInfos) {
+
+  }
 }

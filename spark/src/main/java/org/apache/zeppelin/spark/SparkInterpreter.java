@@ -27,8 +27,6 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.base.Joiner;
@@ -51,6 +49,7 @@ import org.apache.spark.scheduler.ActiveJob;
 import org.apache.spark.scheduler.DAGScheduler;
 import org.apache.spark.scheduler.Pool;
 import org.apache.spark.sql.SQLContext;
+import org.apache.spark.ui.SparkUI;
 import org.apache.spark.ui.jobs.JobProgressListener;
 import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.zeppelin.interpreter.Interpreter;
@@ -114,6 +113,7 @@ public class SparkInterpreter extends Interpreter {
 
   private SparkOutputStream out;
   private SparkDependencyResolver dep;
+  private String sparkUrl;
 
   /**
    * completer - org.apache.spark.repl.SparkJLineCompletion (scala 2.10)
@@ -984,12 +984,33 @@ public class SparkInterpreter extends Interpreter {
     numReferenceOfSparkContext.incrementAndGet();
   }
 
+  private String getSparkUIUrl() {
+    Option<SparkUI> sparkUiOption = (Option<SparkUI>) Utils.invokeMethod(sc, "ui");
+    SparkUI sparkUi = sparkUiOption.get();
+    String sparkWebUrl = sparkUi.appUIAddress();
+    return sparkWebUrl;
+  }
+
   private Results.Result interpret(String line) {
     return (Results.Result) Utils.invokeMethod(
         intp,
         "interpret",
         new Class[] {String.class},
         new Object[] {line});
+  }
+
+  public void populateSparkWebUrl(InterpreterContext ctx) {
+    if (sparkUrl == null) {
+      sparkUrl = getSparkUIUrl();
+      Map<String, String> infos = new java.util.HashMap<>();
+      if (sparkUrl != null) {
+        infos.put("url", sparkUrl);
+        logger.info("Sending metainfos to Zeppelin server: {}", infos.toString());
+        if (ctx != null && ctx.getClient() != null) {
+          ctx.getClient().onMetaInfosReceived(infos);
+        }
+      }
+    }
   }
 
   private List<File> currentClassPath() {
@@ -1131,7 +1152,7 @@ public class SparkInterpreter extends Interpreter {
       return new InterpreterResult(Code.ERROR, "Spark " + sparkVersion.toString()
           + " is not supported");
     }
-
+    populateSparkWebUrl(context);
     z.setInterpreterContext(context);
     if (line == null || line.trim().length() == 0) {
       return new InterpreterResult(Code.SUCCESS);

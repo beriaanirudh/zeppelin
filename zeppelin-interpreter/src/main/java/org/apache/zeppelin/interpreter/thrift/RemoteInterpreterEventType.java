@@ -24,9 +24,6 @@
 package org.apache.zeppelin.interpreter.thrift;
 
 
-import java.util.Map;
-import java.util.HashMap;
-import org.apache.thrift.TEnum;
 
 public enum RemoteInterpreterEventType implements org.apache.thrift.TEnum {
   NO_OP(1),
@@ -38,7 +35,8 @@ public enum RemoteInterpreterEventType implements org.apache.thrift.TEnum {
   RESOURCE_GET(7),
   OUTPUT_APPEND(8),
   OUTPUT_UPDATE(9),
-  ANGULAR_REGISTRY_PUSH(10);
+  ANGULAR_REGISTRY_PUSH(10),
+  META_INFOS(12);
 
   private final int value;
 
@@ -79,6 +77,8 @@ public enum RemoteInterpreterEventType implements org.apache.thrift.TEnum {
         return OUTPUT_UPDATE;
       case 10:
         return ANGULAR_REGISTRY_PUSH;
+      case 12:
+        return META_INFOS;
       default:
         return null;
     }
