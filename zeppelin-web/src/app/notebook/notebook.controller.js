@@ -365,8 +365,6 @@ angular.module('zeppelinWebApp').controller('NotebookCtrl',
 
     if ($scope.note === null || force === true) {
       $scope.note = note;
-    } else {
-      updateNote(note);
     }
     initializeLookAndFeel();
     //open interpreter binding setting when there're none selected
@@ -492,86 +490,51 @@ angular.module('zeppelinWebApp').controller('NotebookCtrl',
     }
   });
 
-  var updateNote = function(note) {
-    /** update Note name */
-    if (note.name !== $scope.note.name) {
-      console.log('change note name: %o to %o', $scope.note.name, note.name);
-      $scope.note.name = note.name;
-    }
 
-    $scope.note.config = note.config;
-    $scope.note.info = note.info;
-
-    var newParagraphIds = note.paragraphs.map(function(x) {return x.id;});
-    var oldParagraphIds = $scope.note.paragraphs.map(function(x) {return x.id;});
-
-    var numNewParagraphs = newParagraphIds.length;
-    var numOldParagraphs = oldParagraphIds.length;
-
-    var paragraphToBeFocused;
-    var focusedParagraph;
-    for (var i=0; i<$scope.note.paragraphs.length; i++) {
-      var paragraphId = $scope.note.paragraphs[i].id;
-      if (angular.element('#' + paragraphId + '_paragraphColumn_main').scope().paragraphFocused) {
-        focusedParagraph = paragraphId;
-        break;
-      }
-    }
-
-    /** add a new paragraph */
-    if (numNewParagraphs > numOldParagraphs) {
-      for (var index in newParagraphIds) {
-        if (oldParagraphIds[index] !== newParagraphIds[index]) {
-          $scope.note.paragraphs.splice(index, 0, note.paragraphs[index]);
-          paragraphToBeFocused = note.paragraphs[index].id;
-          break;
+    var addPara = function(paragraph, index) {
+      $scope.note.paragraphs.splice(index, 0, paragraph);
+      _.each($scope.note.paragraphs, function(para) {
+        if (para.id === paragraph.id) {
+          para.focus = true;
         }
-        $scope.$broadcast('updateParagraph', {
-          note: $scope.note, // pass the note object to paragraph scope
-          paragraph: note.paragraphs[index]});
-      }
-    }
+      });
+    };
 
-    /** update or move paragraph */
-    if (numNewParagraphs === numOldParagraphs) {
-      for (var idx in newParagraphIds) {
-        var newEntry = note.paragraphs[idx];
-        if (oldParagraphIds[idx] === newParagraphIds[idx]) {
-          $scope.$broadcast('updateParagraph', {
-            note: $scope.note, // pass the note object to paragraph scope
-            paragraph: newEntry});
-        } else {
-          // move paragraph
-          var oldIdx = oldParagraphIds.indexOf(newParagraphIds[idx]);
-          $scope.note.paragraphs.splice(oldIdx, 1);
-          $scope.note.paragraphs.splice(idx, 0, newEntry);
-          // rebuild id list since paragraph has moved.
-          oldParagraphIds = $scope.note.paragraphs.map(function(x) {return x.id;});
+    var removePara = function(paragraphId) {
+      var removeIdx;
+      _.each($scope.note.paragraphs, function(para, idx) {
+        if (para.id === paragraphId) {
+          removeIdx = idx;
         }
+      });
+      return $scope.note.paragraphs.splice(removeIdx, 1);
+    };
 
-        if (focusedParagraph === newParagraphIds[idx]) {
-          paragraphToBeFocused = focusedParagraph;
-        }
-      }
-    }
+    $scope.$on('addParagraph', function(event, paragraph, index) {
+      addPara(paragraph, index);
+    });
 
-    /** remove paragraph */
-    if (numNewParagraphs < numOldParagraphs) {
-      for (var oldidx in oldParagraphIds) {
-        if(oldParagraphIds[oldidx] !== newParagraphIds[oldidx]) {
-          $scope.note.paragraphs.splice(oldidx, 1);
-          break;
-        }
-      }
-    }
+    $scope.$on('removeParagraph', function(event, paragraphId) {
+      removePara(paragraphId);
+    });
 
-    // restore focus of paragraph
-    for (var f=0; f<$scope.note.paragraphs.length; f++) {
-      if (paragraphToBeFocused === $scope.note.paragraphs[f].id) {
-        $scope.note.paragraphs[f].focus = true;
+    $scope.$on('moveParagraph', function(event, paragraphId, newIdx) {
+      var removedPara = removePara(paragraphId);
+      if (removedPara && removedPara.length === 1) {
+        addPara(removedPara[0], newIdx);
       }
-    }
-  };
+    });
+
+    $scope.$on('updateNote', function(event, name, config, info) {
+      /** update Note name */
+      if (name !== $scope.note.name) {
+        console.log('change note name to : %o', $scope.note.name);
+        $scope.note.name = name;
+      }
+      $scope.note.config = config;
+      $scope.note.info = info;
+      initializeLookAndFeel();
+    });
 
   var getInterpreterBindings = function(callback) {
     $http.get(baseUrlSrv.getRestApiBase()+ '/notebook/interpreter/bind/' +$scope.note.id).

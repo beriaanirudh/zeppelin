@@ -99,8 +99,17 @@ angular.module('zeppelinWebApp').factory('websocketEvents', function($rootScope,
       $rootScope.$broadcast('angularObjectRemove', data);
     } else if (op === 'CONFIGURATIONS_INFO') {
       $rootScope.$broadcast('configurationsInfo', data);
+    } else if (op === 'PARAGRAPH_ADDED') {
+      $rootScope.$broadcast('addParagraph', data.paragraph, data.index);
+    } else if (op === 'PARAGRAPH_REMOVED') {
+      $rootScope.$broadcast('removeParagraph', data.id);
+    } else if (op === 'PARAGRAPH_MOVED') {
+      $rootScope.$broadcast('moveParagraph', data.id, data.index);
+    } else if (op === 'NOTE_UPDATED') {
+      $rootScope.$broadcast('updateNote', data.name, data.config, data.info);
     }
   });
+
 
   websocketCalls.ws.onError(function(event) {
     console.log('error message: ', event);
