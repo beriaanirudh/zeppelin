@@ -430,18 +430,20 @@ public class Note implements Serializable, JobListener {
    */
   public void runAll() {
     String cronExecutingUser = (String) getConfig().get("cronExecutingUser");
+    List<Paragraph> newParaList = null;
     synchronized (paragraphs) {
-      for (Paragraph p : paragraphs) {
-        if (!p.isEnabled()) {
-          continue;
-        }
-        AuthenticationInfo authenticationInfo = new AuthenticationInfo();
-        authenticationInfo.setUser(cronExecutingUser);
-        p.setAuthenticationInfo(authenticationInfo);
-        p.setNoteReplLoader(replLoader);
-        run(p.getId(), cronExecutingUser, QuboleUtil.getEmailForUser(cronExecutingUser), false);
-        QuboleEventUtils.saveEvent(EVENTTYPE.PARAGRAPH_EXECUTION_START, cronExecutingUser, p);
+      newParaList = new LinkedList<Paragraph>(paragraphs);
+    }
+    for (Paragraph p : newParaList) {
+      if (!p.isEnabled()) {
+        continue;
       }
+      AuthenticationInfo authenticationInfo = new AuthenticationInfo();
+      authenticationInfo.setUser(cronExecutingUser);
+      p.setAuthenticationInfo(authenticationInfo);
+      p.setNoteReplLoader(replLoader);
+      run(p.getId(), cronExecutingUser, QuboleUtil.getEmailForUser(cronExecutingUser), false);
+      QuboleEventUtils.saveEvent(EVENTTYPE.PARAGRAPH_EXECUTION_START, cronExecutingUser, p);
     }
   }
 
