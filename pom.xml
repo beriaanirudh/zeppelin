@@ -95,7 +95,31 @@
 
     <PermGen>64m</PermGen>
     <MaxPermGen>512m</MaxPermGen>
+    <powermock.version>1.5.5</powermock.version>
   </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-module-junit4</artifactId>
+      <version>${powermock.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-api-mockito</artifactId>
+      <version>${powermock.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.javassist</groupId>
+      <artifactId>javassist</artifactId>
+      <version>3.18.2-GA</version>
+    </dependency>
+
+  </dependencies>
+
+
 
   <dependencyManagement>
     <dependencies>
@@ -548,7 +572,7 @@
           <artifactId>maven-surefire-plugin</artifactId>
           <version>2.17</version>
           <configuration combine.children="append">
-            <argLine>-Xmx2g -Xms1g -Dfile.encoding=UTF-8</argLine>
+            <argLine>-Xmx2g -Xms1g -Dfile.encoding=UTF-8 -XX:-UseSplitVerifier</argLine>
             <encoding>UTF-8</encoding>
             <inputEncoding>UTF-8</inputEncoding>
             <outputEncoding>UTF-8</outputEncoding>

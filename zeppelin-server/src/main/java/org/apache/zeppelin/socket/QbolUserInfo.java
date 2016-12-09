@@ -1,6 +1,7 @@
 package org.apache.zeppelin.socket;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -17,7 +18,7 @@ public class QbolUserInfo implements Map<String, Object> {
 
   @Override
   public Set<String> keySet() {
-    return map.keySet();
+    return new HashSet<String> (map.keySet());
   }
 
   @Override

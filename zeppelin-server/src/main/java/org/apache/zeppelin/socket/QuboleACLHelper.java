@@ -371,4 +371,12 @@ public class QuboleACLHelper implements Runnable {
     DELETE
   }
 
+  /* These methods are only used for unit-tests */
+  public static void enableAccountFeatureForUnitTests() {
+    ACLS_ENABLED = true;
+  }
+
+  public static QuboleACLHelper getRunnableForUnitTests(Notebook notebook) {
+    return new QuboleACLHelper(notebook, null);
+  }
 }
