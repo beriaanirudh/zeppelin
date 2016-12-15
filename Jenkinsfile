@@ -35,7 +35,7 @@ env.slack_channel="#zeppelin"
 //Build code starts from here
 
 //node step defines where the job will run. It matches the node having this label
-node('build-machine')
+node('zeppelin-build')
 {
     currentBuild.result="SUCCESS"
 	
