@@ -29,7 +29,7 @@ env.jenkins_branch="master"
 env.url = "http://ci.qubole.net/blue/organizations/jenkins/zeppelin/detail/${env.branch}/${BUILD_NUMBER}/pipeline"
 
 //slack channel you want notifications to be sent. A notification will be sent for failure and success
-env.slack_channel="#zeppelin"
+env.slack_channel="#jenkins-test-message""
 
 
 //Build code starts from here
