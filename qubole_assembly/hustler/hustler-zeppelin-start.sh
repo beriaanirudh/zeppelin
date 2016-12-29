@@ -5,6 +5,10 @@ s3_first_class_notebook_loc=`nodeinfo s3_first_class_notebook_location`
 qubole_base_url=`nodeinfo qubole_base_url`
 qubole_api_token=`nodeinfo qubole_cluster_api_token`
 sync_enabled=`nodeinfo zeppelin_folder_sync`
+is_master=`nodeinfo is_master`
+use_spark=`nodeinfo use_spark`
+do_hbase=`nodeinfo do_hbase`
+do_presto=`nodeinfo do_presto`
 
 FILE="/usr/lib/qubole/cloud_info.sh" && [[ -f $FILE ]] && source $FILE
 
