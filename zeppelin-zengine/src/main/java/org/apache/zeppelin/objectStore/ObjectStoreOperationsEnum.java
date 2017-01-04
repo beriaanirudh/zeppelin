@@ -1,17 +1,17 @@
-package org.apache.zeppelin.s3;
+package org.apache.zeppelin.objectStore;
 /**
  * 
- * S3 operation types
+ * ObjectStore operation types
  *
  */
 
-public enum S3OperationsEnum { // using the constructor defined below
+public enum ObjectStoreOperationsEnum { // using the constructor defined below
   GET("get"), PUT("put"), SYNC("sync");
 
   // Member to hold the operation name
   private String opName;
 
-  S3OperationsEnum(String name) {
+  ObjectStoreOperationsEnum(String name) {
     opName = name;
   }
 

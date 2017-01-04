@@ -172,6 +172,7 @@ function initqubole() {
   export CLUSTER_ID=`nodeinfo cluster_id`
   export ENABLE_EVENTBUS=`nodeinfo enable_eventbus`
   export ZEPPELIN_OUTPUT_SIZE_LIMIT=`nodeinfo zeppelin_output_size_limit`
+  export ENABLE_HADOOP_CMD=`nodeinfo zeppelin_use_hadoop_cmd`
   echo "QUBOLE_BASE_URL is: ${QUBOLE_BASE_URL}, FIRST_CLASS_NOTEBOOK_LOC=${FIRST_CLASS_NOTEBOOK_LOC}"
 }
 

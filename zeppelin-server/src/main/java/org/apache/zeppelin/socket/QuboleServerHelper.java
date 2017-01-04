@@ -82,7 +82,7 @@ public class QuboleServerHelper {
       return new JsonResponse<>(Status.NOT_FOUND, "Note not found").build();
     }
     Gson gson = new GsonBuilder().setPrettyPrinting().create();
-    QuboleUtil.syncNotesToS3();
+    QuboleUtil.syncNotesToFolders();
     LOG.info("Returing latest note = " + noteId);
     return new JsonResponse<>(Status.OK, gson.toJson(note)).build();
   }
@@ -154,7 +154,7 @@ public class QuboleServerHelper {
     try {
       Note note = notebook.loadNoteFromRepo(noteId, null);
       ZeppelinServer.notebookWsServer.broadcastNote(note, true);
-      QuboleUtil.syncNotesToS3();
+      QuboleUtil.syncNotesToFolders();
     } catch (IOException e) {
       LOG.error("Exception while checking out note: " + e.getMessage());
       return new JsonResponse<>(Status.NOT_FOUND, e.getMessage()).build();

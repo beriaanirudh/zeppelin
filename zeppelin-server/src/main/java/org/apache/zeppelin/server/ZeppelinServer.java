@@ -102,7 +102,7 @@ public class ZeppelinServer extends Application {
       // synchronous call to populate the notes
       QuboleUtil.initNoteBook();
     } catch (Exception e) {
-      LOG.error("s3ops Exception occured " + e.getMessage());
+      LOG.error("ops Exception occured " + e.getMessage());
     }
 
     QuboleUtil.initNoteBookSync(conf);
@@ -145,8 +145,8 @@ public class ZeppelinServer extends Application {
         LOG.info("Shutting down Zeppelin Server ... ");
         QuboleEventUtils.saveEvent(EVENTTYPE.SERVER_STOP, null);
         try {
-          QuboleUtil.syncNotesToS3();
-          QuboleUtil.putInterpretersToS3();
+          QuboleUtil.syncNotesToFolders();
+          QuboleUtil.putInterpretersToObjectStore();
           jettyWebServer.stop();
           notebook.getInterpreterFactory().close();
           notebook.close();

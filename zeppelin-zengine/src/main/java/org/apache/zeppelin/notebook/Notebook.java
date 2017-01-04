@@ -759,13 +759,12 @@ public class Notebook {
     this.notebookIndex.close();
   }
 
-  public Note fetchAndLoadNoteFromS3(String noteId, Map<String, String> attrMap)
+  public Note fetchAndLoadNoteFromObjectStore(String noteId, Map<String, String> attrMap)
       throws IOException {
 
-    List<String> noteIds = new ArrayList<>();
-    noteIds.add(noteId);
-
-    QuboleUtil.fetchFromS3(noteIds);
+    Map<String, Map<String, String>> noteToAttrMap = new HashMap<>();
+    noteToAttrMap.put(noteId, attrMap);
+    QuboleUtil.fetchFromObjectStoreFolders(noteToAttrMap);
     return loadNoteFromRepo(noteId, null);
   }
 }

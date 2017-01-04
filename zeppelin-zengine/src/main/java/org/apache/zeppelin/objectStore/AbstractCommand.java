@@ -1,4 +1,4 @@
-package org.apache.zeppelin.s3;
+package org.apache.zeppelin.objectStore;
 
 import java.io.IOException;
 
@@ -7,12 +7,12 @@ import org.slf4j.LoggerFactory;
 
 /**
  *
- * @author Abstract class for all s3 operations
+ * @author Abstract class for all objectstore operations
  *
  */
 
-public abstract class AbstractS3Command implements S3Command {
-  private static final Logger LOG = LoggerFactory.getLogger(AbstractS3Command.class);
+public abstract class AbstractCommand implements Command {
+  private static final Logger LOG = LoggerFactory.getLogger(AbstractCommand.class);
   private String source;
   private String destination;
 
@@ -56,10 +56,10 @@ public abstract class AbstractS3Command implements S3Command {
       process.waitFor();
       exitValue = process.exitValue();
       if (exitValue == 0 && isSuccess()) {
-        LOG.debug("s3ops " + getOperation() + " Operation succeeded. Command: " + command);
+        LOG.debug("ops " + getOperation() + " Operation succeeded. Command: " + command);
         break;
       }
-      LOG.error("s3ops S3 operation failed command: " + command);
+      LOG.error("ops operation failed for command: " + command);
       Thread.sleep(5000);
       numRetries--;
     }

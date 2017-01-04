@@ -1033,7 +1033,7 @@ public class NotebookRestApi {
     Note note = notebook.getNote(noteId);
     if (note == null) {
       Map<String, String> noteAttributes = QuboleNoteAttributes.getNoteAttributesFromJSON(req);
-      note = notebook.fetchAndLoadNoteFromS3(noteId, noteAttributes);
+      note = notebook.fetchAndLoadNoteFromObjectStore(noteId, noteAttributes);
       QuboleNoteAttributes.setNoteAttributes(note, noteAttributes);
       if (note == null) {
         LOG.error("Associate failed for note " + noteId);

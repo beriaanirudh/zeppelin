@@ -421,6 +421,10 @@ public class ZeppelinConfiguration extends XMLConfiguration {
     return getInt(ConfVars.ZEPPELIN_INTERPRETERS_SYNC_FREQUENCY);
   }
 
+  public int getSyncPoolSize() {
+    return getInt(ConfVars.ZEPPELIN_SYNC_POOL_SIZE);
+  }
+
   public List<String> getAllowedOrigins()
   {
     if (getString(ConfVars.ZEPPELIN_ALLOWED_ORIGINS).isEmpty()) {
@@ -572,7 +576,8 @@ public class ZeppelinConfiguration extends XMLConfiguration {
     ZEPPELIN_USE_JDBC_ALIAS("zeppelin.use.jdbc.alias", true),
     ZEPPELIN_NOTEBOOK_SYNC_FREQUENCY("zeppelin.notebooks.sync.frequency", 120000),
     ZEPPELIN_INTERPRETERS_SYNC_FREQUENCY("zeppelin.interpreters.sync.frequency", 600000),
-    ZEPPELIN_REFRESH_ACLS_BATCH_SIZE("zeppelin.refresh.acl.batch.size", 20);
+    ZEPPELIN_REFRESH_ACLS_BATCH_SIZE("zeppelin.refresh.acl.batch.size", 20),
+    ZEPPELIN_SYNC_POOL_SIZE("zeppelin.sync.poolsize", 10);
     private String varName;
     @SuppressWarnings("rawtypes")
     private Class varClass;

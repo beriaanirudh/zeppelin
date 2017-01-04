@@ -1,15 +1,15 @@
-package org.apache.zeppelin.s3;
+package org.apache.zeppelin.objectStore;
 
 import java.io.IOException;
 /**
  * 
- * @author interface for s3 commands
+ * @author interface for ObjectStore commands
  *
  */
 
-public interface S3Command {
+public interface Command {
 
-  S3OperationsEnum getOperation();
+  ObjectStoreOperationsEnum getOperation();
 
   String getCommand();
 
