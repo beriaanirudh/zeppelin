@@ -16,7 +16,7 @@ public class QuboleSparkHelper {
       //%3A8088%2Fproxy%2Fapplication_1481645009353_0002%/jobs/job?id=1
       int indexOf = sparkUrl.indexOf("%3F");
       jobUrl = sparkUrl.substring(0, indexOf);
-      jobUrl = jobUrl + "/jobs/job?id=" + jobId;
+      jobUrl = jobUrl + "/jobs/job?spark=true&id=" + jobId;
     } else {
       jobUrl = sparkUrl + "/jobs/job?id=" + jobId;
     }
