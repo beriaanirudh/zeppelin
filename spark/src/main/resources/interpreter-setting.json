@@ -7,8 +7,60 @@
       "spark.executor.memory": {
         "envName": null,
         "propertyName": "spark.executor.memory",
-        "defaultValue": "",
+        "defaultValue": "1g",
         "description": "Executor memory per worker instance. ex) 512m, 32g"
+      },
+      "spark.executor.cores": {
+        "envName": null,
+        "propertyName": "spark.executor.cores",
+        "defaultValue": "1",
+        "description": "total number of cores to use per executor"
+      },
+      "spark.executor.instances": {
+        "envName": null,
+        "propertyName": "spark.executor.instances",
+        "defaultValue": "2",
+        "description": "Min executors to start spark application with"
+      },
+      "spark.driver.memory": {
+        "envName": null,
+        "propertyName": "spark.driver.memory",
+        "defaultValue": "2g",
+        "description": "Specify driver memory. Eg: 2g for memory in gbs or 2000m for memory in mbs. \
+                        If you dont use a unit, default unit is assumed to be gbs."
+      },
+      "spark.qubole.max.executors": {
+        "envName": null,
+        "propertyName": "spark.qubole.max.executors",
+        "defaultValue": "10",
+        "description": "Max executors autoscaling can reach to"
+      },
+      "spark.qubole.idle.timeout": {
+        "envName": null,
+        "propertyName": "spark.qubole.idle.timeout",
+        "defaultValue": "10",
+        "description": "spark context will stop automatically if it has not run anything since \
+                        last spark.qubole.idle.timeout minutes. Set to -1 to never stop spark. \
+                        This is necessary to free up cluster resources."
+      },
+      "zeppelin.default.interpreter": {
+        "envName": null,
+        "propertyName": "zeppelin.default.interpreter",
+        "defaultValue": "spark",
+        "description": "Default interpreter used for the spark group"
+      },
+      "zeppelin.interpreter.persistent": {
+        "envName": null,
+        "propertyName": "zeppelin.interpreter.persistent",
+        "defaultValue": "false",
+        "description": "Interpreter will always be up if true"
+      },
+      "zeppelin.interpreter.bootstrap.notebook": {
+        "envName": null,
+        "propertyName": "zeppelin.interpreter.bootstrap.notebook",
+        "defaultValue": "null",
+        "description": "Will run the notebook (with this id) \
+                        before anything using this interpreter is run"
       },
       "args": {
         "envName": null,
