@@ -20,3 +20,7 @@ export PYTHONPATH="$SPARK_HOME/python/:$PYTHONPATH"
 export PYTHONPATH="$SPARK_HOME/python/lib/py4j-0.8.2.1-src.zip:$PYTHONPATH"
 # export PYSPARK_PYTHON          # path to the python command. must be the same path on the driver(Zeppelin) and all workers.
 # export PYTHONPATH              # extra PYTHONPATH.
+if [[ -d "/usr/lib/spark" ]]
+then
+export SPARK_HOME=/usr/lib/spark
+fi
