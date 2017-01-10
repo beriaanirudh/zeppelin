@@ -63,6 +63,7 @@ public class NotebookTest implements JobListenerFactory{
   private DependencyResolver depResolver;
   private NotebookAuthorization notebookAuthorization;
   private Credentials credentials;
+  private SearchService searchService;
 
   @Before
   public void setUp() throws Exception {
@@ -87,12 +88,12 @@ public class NotebookTest implements JobListenerFactory{
     depResolver = new DependencyResolver(tmpDir.getAbsolutePath() + "/local-repo");
     factory = new InterpreterFactory(conf, new InterpreterOption(false), null, null, depResolver);
 
-    SearchService search = mock(SearchService.class);
+    searchService = mock(SearchService.class);
     notebookRepo = new VFSNotebookRepo(conf);
     notebookAuthorization = new NotebookAuthorization(conf);
     credentials = new Credentials(conf.credentialsPersist(), conf.getCredentialsPath());
 
-    notebook = new Notebook(conf, notebookRepo, schedulerFactory, factory, this, search,
+    notebook = new Notebook(conf, notebookRepo, schedulerFactory, factory, this, searchService,
             notebookAuthorization, credentials);
 
   }
@@ -188,7 +189,7 @@ public class NotebookTest implements JobListenerFactory{
 
     Notebook notebook2 = new Notebook(
         conf, notebookRepo, schedulerFactory,
-        new InterpreterFactory(conf, null, null, null, depResolver), this, null, null, null);
+        new InterpreterFactory(conf, null, null, null, depResolver), this, searchService, null, null);
     assertEquals(1, notebook2.getAllNotes().size());
   }
 

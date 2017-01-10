@@ -214,6 +214,11 @@
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>qubole_assembly/*</exclude>
+          </excludes>
+        </configuration>
       </plugin>
 
       <plugin>
