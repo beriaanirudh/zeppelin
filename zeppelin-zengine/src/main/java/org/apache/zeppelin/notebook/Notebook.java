@@ -413,7 +413,7 @@ public class Notebook {
     return note;
   }
 
-  private void loadAllNotes() throws IOException {
+  public void loadAllNotes() throws IOException {
     List<NoteInfo> noteInfos = notebookRepo.list(null);
 
     for (NoteInfo info : noteInfos) {

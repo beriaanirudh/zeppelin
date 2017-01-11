@@ -50,7 +50,6 @@ import org.apache.zeppelin.user.AuthenticationInfo;
 import org.apache.zeppelin.utils.SecurityUtils;
 import org.quartz.CronExpression;
 import org.apache.zeppelin.server.ZeppelinServer;
-import org.apache.zeppelin.socket.Message;
 import org.apache.zeppelin.util.QuboleUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -818,10 +817,10 @@ public class NotebookRestApi {
   @POST
   @Path("note")
   public Response createNote(@QueryParam("name") String name,
-                             @QueryParam("sourceNoteId") String sourceNoteId,
-                             @QueryParam("source") String source,
-                             @QueryParam("interpreterIds") List<String> interpreterIds)
-      throws IOException, CloneNotSupportedException {
+      @QueryParam("sourceNoteId") String sourceNoteId,
+      @QueryParam("source") String source,
+      @QueryParam("interpreterIds") List<String> interpreterIds)
+          throws IOException, CloneNotSupportedException {
     // Create the JSON Object
     JsonObject propObj = new JsonObject();
 
@@ -836,17 +835,17 @@ public class NotebookRestApi {
 
     JsonObject dataObj = new JsonObject();
     dataObj.add("data", propObj);
-
-    Message msg = gson.fromJson(dataObj, Message.class);
-    Note newNote;
-    if (sourceNoteId == null || sourceNoteId.isEmpty()) {
-      newNote = ZeppelinServer.notebookServer.createNote(null, notebook, msg);
-    } else {
-      newNote = ZeppelinServer.notebookServer.cloneNote(null, notebook, msg);
+    if (!StringUtils.isEmpty(sourceNoteId)) {
+      return new JsonResponse(Status.FORBIDDEN, "Cannot clone from native UI").build();
     }
-
+    Note note = (interpreterIds == null || interpreterIds.isEmpty()) ?
+        notebook.createNote(null) : notebook.createNote(interpreterIds, null);
+    source = (source == null) ? "JobServer" : source;
+    if (!StringUtils.isEmpty(name)) {
+      note.setName(name);
+    }
     Map<String, String> obj = new HashMap<>();
-    obj.put("id", newNote.id());
+    obj.put("id", note.id());
     return new JsonResponse(Status.CREATED, null, obj).build();
   }
 
