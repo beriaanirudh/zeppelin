@@ -45,10 +45,14 @@
         .config(function ($httpProvider, $routeProvider, ngToastProvider) {
             // withCredentials when running locally via grunt
             $httpProvider.defaults.withCredentials = true;
-
             $routeProvider
                 .when('/', {
-                    templateUrl: 'app/home/home.html'
+                    templateUrl: 'app/home/home.html',
+                    controller: 'HomeCtrl'
+                })
+                .when('/notebook-qds/:noteId', {
+                  templateUrl: 'app/notebook/notebook-qds.html',
+                  controller: 'NotebookCtrl'
                 })
                 .when('/notebook/:noteId', {
                     templateUrl: 'app/notebook/notebook.html',

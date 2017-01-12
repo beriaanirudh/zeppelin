@@ -75,7 +75,7 @@ module.exports = function (grunt) {
           assets: ['scripts/**.js', 'styles/**.css'],
           deleteOriginals: true
         },
-        src: ['<%= yeoman.dist %>/index.html']
+        src: ['<%= yeoman.dist %>/index.html', '<%= yeoman.dist %>/index-qds.html']
       }
     },
 

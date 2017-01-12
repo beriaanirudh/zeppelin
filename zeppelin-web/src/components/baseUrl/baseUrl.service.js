@@ -40,6 +40,7 @@ angular.module('zeppelinWebApp').service('baseUrlSrv', function() {
   };
 
   var skipTrailingSlash = function(path) {
+    path = path.replace('index-qds.html', '');
     return path.replace(/\/$/, '');
   };
 
