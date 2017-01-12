@@ -37,6 +37,7 @@ import org.apache.zeppelin.interpreter.remote.RemoteInterpreterProcessListener;
 import org.apache.zeppelin.notebook.NoteInterpreterLoader;
 import org.apache.zeppelin.scheduler.Job;
 import org.apache.zeppelin.scheduler.Job.Status;
+import org.apache.zeppelin.util.QuboleUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonatype.aether.RepositoryException;
@@ -400,6 +401,7 @@ public class InterpreterFactory implements InterpreterGroupFactory {
 
       jsonString = gson.toJson(info);
     }
+    jsonString = QuboleUtil.removeJobServerInterpreter(jsonString);
 
     File settingFile = new File(conf.getInterpreterSettingPath());
     if (!settingFile.exists()) {

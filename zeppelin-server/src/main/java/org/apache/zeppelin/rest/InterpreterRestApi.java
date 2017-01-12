@@ -40,6 +40,7 @@ import org.apache.zeppelin.interpreter.Interpreter.RegisteredInterpreter;
 import org.apache.zeppelin.rest.message.NewInterpreterSettingRequest;
 import org.apache.zeppelin.rest.message.UpdateInterpreterSettingRequest;
 import org.apache.zeppelin.server.JsonResponse;
+import org.apache.zeppelin.util.QuboleUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,6 +101,7 @@ public class InterpreterRestApi {
       }
       Properties p = new Properties();
       p.putAll(request.getProperties());
+      QuboleUtil.addJobServerPropertyToInterpreter(request.getSource(), p);
       InterpreterSetting interpreterSetting = interpreterFactory.add(request.getName(),
           request.getGroup(),
           request.getDependencies(),

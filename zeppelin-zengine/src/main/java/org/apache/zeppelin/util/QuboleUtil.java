@@ -9,7 +9,9 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Properties;
 
 import org.apache.zeppelin.conf.ZeppelinConfiguration;
 import org.apache.zeppelin.notebook.Note;
@@ -17,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -38,6 +41,11 @@ public class QuboleUtil {
   private static final String s3cmd = "/usr/bin/s3cmd -c /usr/lib/hustler/s3cfg";
   private static final String clusterId = System.getenv("CLUSTER_ID");
   private static final ZeppelinConfiguration zepConfig = ZeppelinConfiguration.create();
+
+  public static final String SOURCE = "source";
+  public static final String JOBSERVER = "JobServer";
+  public static final String INTERPRETER_SETTINGS = "interpreterSettings";
+  public static final String PROPERTIES = "properties";
 
   /**
    * make opsapi call to qubole rails tier to convey creation of new note
@@ -198,5 +206,30 @@ public class QuboleUtil {
 
   public static String getClusterId(){
     return clusterId;
+  }
+
+  public static void addJobServerPropertyToInterpreter(String source, Properties p) {
+    if (JOBSERVER.equals(source)) {
+      p.put(SOURCE, JOBSERVER);
+    }
+  }
+
+  public static String removeJobServerInterpreter(String jsonString) {
+    GsonBuilder gsonBuilder = new GsonBuilder();
+    gsonBuilder.setPrettyPrinting();
+    Gson gson = gsonBuilder.create();
+
+    Map<String, Object> infoMap = gson.fromJson(jsonString, Map.class);
+    Map<String, Object> settingsMap = (Map<String, Object>) infoMap.get(INTERPRETER_SETTINGS);
+    Iterator<Map.Entry<String, Object>> iter = settingsMap.entrySet().iterator();
+    while (iter.hasNext()) {
+      Map.Entry<String, Object> entry = iter.next();
+      Map<String, Object> interpreterSetting = (Map<String, Object>) entry.getValue();
+      Map<String, Object> properties = (Map<String, Object>) interpreterSetting.get(PROPERTIES);
+      if (JOBSERVER.equals(properties.get(SOURCE))) {
+        iter.remove();
+      }
+    }
+    return gson.toJson(infoMap);
   }
 }

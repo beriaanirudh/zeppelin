@@ -34,6 +34,7 @@ public class NewInterpreterSettingRequest {
   Map<String, String> properties;
   List<Dependency> dependencies;
   InterpreterOption option;
+  String source;
 
   public NewInterpreterSettingRequest() {
 
@@ -58,4 +59,8 @@ public class NewInterpreterSettingRequest {
   public InterpreterOption getOption() {
     return option;
   }
+  public String getSource() {
+    return source;
+  }
+
 }
