@@ -599,6 +599,7 @@ public class QuboleUtil {
         URI uri = Paths.get(QuboleUtil.getNotebookDir(), note.id(), "note.json").toUri();
         syncCommand.setSource(uri.toString());
         syncCommand.setDestination(note.getQuboleNoteAttributes().getLocation());
+        syncCommand.setNoteId(note.getId());
         instance.executeCommand(syncCommand);
       }
     }

@@ -1157,4 +1157,118 @@ public class NotebookRestApi {
     QuboleACLHelper.refreshACLs(notebook, noteId);
     return new JsonResponse<>(Status.OK).build();
   }
+
+  /**
+   * Associate new notes in bulk.
+   * @param message - newNoteId to newS3Location map.
+   * @return HTTP Status
+   * @throws IOException
+   */
+  @PUT
+  @Path("/associate")
+  public Response associateNotes(@Context HttpServletRequest req, String message)
+      throws IOException {
+    Gson gson = new Gson();
+    if (!QuboleACLHelper.canCreateNote(req)) {
+      LOG.error("Not enough permission to move notes.");
+      return new JsonResponse<>(Status.FORBIDDEN).build();
+    }
+    Notebook notebook = ZeppelinServer.notebook;
+    Map<String, Object> noteAttrsMap = gson.fromJson(message, Map.class);
+    for (String noteId : noteAttrsMap.keySet()) {
+      Note note = notebook.getNote(noteId);
+      if (note == null) {
+        Map<String, String> noteAttributes =
+            QuboleNoteAttributes.getNoteAttributesFromJSON(gson.toJson(noteAttrsMap.get(noteId)));
+        note = notebook.fetchAndLoadNoteFromObjectStore(noteId, noteAttributes);
+        if (note == null) {
+          LOG.error("Associate failed for note " + noteId);
+          return new JsonResponse<>(Status.NOT_FOUND).build();
+        }
+        QuboleNoteAttributes.setNoteAttributes(note, noteAttributes);
+        ZeppelinServer.notebookWsServer.refresh(note);
+        LOG.info("Succesfully processed associate request for note " + noteId);
+      }
+      String userId = req.getHeader(QuboleServerHelper.QBOL_USER_ID);
+      QuboleEventUtils.saveEvent(EVENTTYPE.NOTEBOOK_ASSOCIATE, userId, note);
+    }
+    QuboleUtil.syncNotesToFolders();
+    return new JsonResponse<>(Status.OK).build();
+  }
+  
+  /**
+   * Update location of existing notes.
+   * @param message - noteId to newS3Location map.
+   * @return HTTP Status
+   * @throws IOException
+   */
+  @POST
+  @Path("/update")
+  public Response updateNotes(@Context HttpServletRequest req, String message)
+      throws IOException {
+    Gson gson = new Gson();
+    if (!QuboleACLHelper.canCreateNote(req)) {
+      LOG.error("Not enough permission to move notes.");
+      return new JsonResponse<>(Status.FORBIDDEN).build();
+    }
+    Notebook notebook = ZeppelinServer.notebook;
+    Map<String, String> noteIdToS3LocMap = gson.fromJson(message, Map.class);
+    for (String noteId : noteIdToS3LocMap.keySet()) {
+      Note note = notebook.getNote(noteId);
+      synchronized (note) {
+        if (note != null) {
+          QuboleNoteAttributes noteAttr = note.getQuboleNoteAttributes();
+          if (noteAttr != null) {
+            String newS3Loc = noteIdToS3LocMap.get(noteId);
+            if (!StringUtils.isEmpty(newS3Loc)) {
+              noteAttr.setLocation(newS3Loc);
+              LOG.info("Moving note id {} to location {}.", noteId, newS3Loc);
+            } else {
+              LOG.error("New note location for noteId {} is null or empty.", noteId);
+              return new JsonResponse<>(Status.INTERNAL_SERVER_ERROR).build();
+            }
+          } else {
+            LOG.error("Note attributes for noteId {} not found.", noteId);
+            return new JsonResponse<>(Status.INTERNAL_SERVER_ERROR).build();
+          }
+        } else {
+          LOG.error("Note with noteId {} not found.", noteId);
+          return new JsonResponse<>(Status.INTERNAL_SERVER_ERROR).build();
+        }
+      }
+    }
+    QuboleUtil.syncNotesToFolders();
+    return new JsonResponse<>(Status.OK).build();
+  }
+  
+  /**
+   * Delete notes in bulk
+   * @param message - List of noteId's.
+   * @return HTTP Status
+   * @throws IOException
+   */
+  @DELETE
+  @Path("/delete")
+  public Response deleteNotes(@Context HttpServletRequest req, String message)
+      throws IOException {
+    Gson gson = new Gson();
+    Notebook notebook = ZeppelinServer.notebook;
+    List<String> notesToDelete = gson.fromJson(message, List.class);
+    for (String noteId : notesToDelete) {
+      try {
+        Note note = notebook.getNote(noteId);
+        synchronized (note) {
+          if (!QuboleACLHelper.isOperationAllowed(noteId, req, notebook, DELETE)) {
+            return new JsonResponse<>(Status.FORBIDDEN).build();
+          }
+          notebook.removeNote(noteId, null);
+          LOG.info("Removing note id {}", noteId);
+        }
+      } catch (Exception e) {
+        LOG.error("Exception occured when deleting note {} : {}", noteId, e.getMessage());
+        return new JsonResponse<>(Status.INTERNAL_SERVER_ERROR).build();
+      }
+    }
+    return new JsonResponse<>(Status.OK).build();
+  }
 }

@@ -1,5 +1,6 @@
 package org.apache.zeppelin.objectStore;
 
+import org.apache.zeppelin.notebook.Notebook.CronJob;
 import org.apache.zeppelin.util.QuboleUtil;
 
 /**
@@ -17,14 +18,16 @@ public class SyncCommand extends AbstractWriteCommands {
 
   @Override
   public String getCommand() {
-    if (QuboleUtil.useHadoopCmd()) {
-      return Utils.getHadoopCmdPath() + " dfs -sync " +
-              getSource() + " " + getDestination();
+    synchronized (CronJob.notebook.getNote(getNoteId())) {
+      if (QuboleUtil.useHadoopCmd()) {
+        return Utils.getHadoopCmdPath() + " dfs -sync " +
+                getSource() + " " + getDestination();
+      }
+      else {
+        return Utils.getS3cmdPath() + " --no-check-md5 sync " +
+                getSource() + " " + getDestination();
+      }
     }
-    else {
-      return Utils.getS3cmdPath() + " --no-check-md5 sync " + getSource() + " " + getDestination();
-    }
-
   }
 
 }

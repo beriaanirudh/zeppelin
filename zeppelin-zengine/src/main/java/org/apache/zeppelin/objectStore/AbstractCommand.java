@@ -2,6 +2,9 @@ package org.apache.zeppelin.objectStore;
 
 import java.io.IOException;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.zeppelin.notebook.Note;
+import org.apache.zeppelin.notebook.Notebook.CronJob;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,6 +18,7 @@ public abstract class AbstractCommand implements Command {
   private static final Logger LOG = LoggerFactory.getLogger(AbstractCommand.class);
   private String source;
   private String destination;
+  private String noteId;
 
   @Override
   public String getSource() {
@@ -36,15 +40,35 @@ public abstract class AbstractCommand implements Command {
     this.destination = dest;
 
   }
+  
+  @Override
+  public String getNoteId() {
+    return noteId;
+  }
+
+  @Override
+  public void setNoteId(String noteId) {
+    this.noteId = noteId;
+  }
 
   @Override
   public boolean validate() {
-    return (getSource() != null && getSource().length() != 0 && getDestination() != null
-        && getDestination().length() != 0);
+    String noteId = getNoteId();
+    Note note = null;
+    if (!StringUtils.isEmpty(noteId)) {
+      note = CronJob.notebook.getNote(noteId);
+    }
+    return (!StringUtils.isEmpty(getSource()) && !StringUtils.isEmpty(getDestination()))
+        && (note == null || note.getQuboleNoteAttributes() == null
+        || note.getQuboleNoteAttributes().getLocation().equals(getDestination()));
   }
 
   @Override
   public int execute() throws IOException, InterruptedException {
+    return s3Exec();
+  }
+
+  public int s3Exec() throws IOException, InterruptedException {
     if (!validate()) {
       throw (new RuntimeException("Validation failed"));
     }

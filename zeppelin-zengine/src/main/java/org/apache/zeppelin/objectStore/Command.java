@@ -23,6 +23,10 @@ public interface Command {
 
   void setDestination(String dest);
 
+  String getNoteId();
+  
+  void setNoteId(String noteid);
+
   boolean validate();
 
   boolean isSuccess();
