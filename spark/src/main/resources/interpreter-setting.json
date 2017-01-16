@@ -135,6 +135,11 @@
         "propertyName": "zeppelin.spark.importImplicit",
         "defaultValue": "true",
         "description": "Import implicits, UDF collection, and sql if set true. true by default."
+      },
+      "zeppelin.spark.sql.maxConcurrency": {
+        "propertName": "zeppelin.spark.sql.maxConcurrency",
+        "defaultValue": 10,
+        "description": "Max concurrency for spark sql if zeppelin.spark.concurrentSQL is set to true."
       }
     }
   },
