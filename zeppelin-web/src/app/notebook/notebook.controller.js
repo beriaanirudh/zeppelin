@@ -62,6 +62,17 @@ angular.module('zeppelinWebApp').controller('NotebookCtrl',
     connectedOnce = true;
   });
 
+  $scope.$on('setNoteMenu', function(event, notes) {
+	  var opennoteid = $scope.note.id;
+	  angular.forEach(notes, function(note){
+		   if(note.id === opennoteid){
+			   return;
+		   }
+	  });
+	  alert('This note has been deleted in QDS');
+	  $location.path('/#');
+  });
+
   $scope.getCronOptionNameFromValue = function(value) {
     if (!value) {
       return '';

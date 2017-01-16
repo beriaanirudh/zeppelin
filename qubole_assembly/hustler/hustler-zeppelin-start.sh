@@ -29,7 +29,6 @@ if [[ "$is_master" == "1" ]]; then
     /usr/lib/hadoop2/bin/hadoop dfs -get ${gs_notebook_backup_loc}/ ${zeppelin_dir}/
     /usr/lib/hadoop2/bin/hadoop dfs -get ${gs_notebook_conf_backup_loc}/interpreter.json ${zeppelin_conf_dir}/
   else
-    /usr/bin/s3cmd -c /usr/lib/hustler/s3cfg sync ${s3_notebook_backup_loc}/ ${zeppelin_note_dir}/
     /usr/bin/s3cmd -c /usr/lib/hustler/s3cfg sync ${s3_notebook_conf_backup_loc}/ ${zeppelin_conf_dir}/
   fi
 

@@ -330,7 +330,7 @@ public class NotebookRestApi {
    * @throws IOException
    */
   @DELETE
-  @Path("{notebookId}")
+  @Path("note/{notebookId}")
   @ZeppelinApi
   public Response deleteNote(@PathParam("notebookId") String notebookId) throws IOException {
     LOG.info("Delete notebook {} ", notebookId);
