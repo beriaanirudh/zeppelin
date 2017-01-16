@@ -240,6 +240,22 @@ public class QuboleServerHelper {
     return new JsonResponse<>(Status.OK, null, runNotebookResponse).build();
   }
 
+  public static void setEmailForParagraph(Paragraph p, NotebookSocket conn) {
+    String email = null;
+    String userId = null;
+    if (conn != null) {
+      userId = socketToUserIdMap.get(conn);
+      if (userId != null) {
+        email = userIdToEmailMap.get(userId);
+      }
+    }
+    if (email == null) {
+      LOG.warn("Could not set Email for paragraph, conn = {} and user={}", conn, userId);
+      return;
+    }
+    p.setUser(email);
+  }
+
   private static boolean isNoteRunning(Notebook notebook, String noteId) {
     Note note = notebook.getNote(noteId);
     for (Paragraph paragraph: note.getParagraphs()) {

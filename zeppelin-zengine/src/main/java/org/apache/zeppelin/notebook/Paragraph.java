@@ -471,6 +471,10 @@ public class Paragraph extends Job implements Serializable, Cloneable {
     return qbolStartParagraphEventId;
   }
 
+  public void setUser(String user) {
+    this.user = user;
+  }
+
   @Override
   public Object clone() throws CloneNotSupportedException {
     Paragraph paraClone = (Paragraph) this.clone();

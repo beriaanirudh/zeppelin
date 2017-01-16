@@ -682,6 +682,7 @@ public class NotebookServer extends WebSocketServlet implements
     p.setConfig(config);
     p.setTitle((String) fromMessage.get("title"));
     p.setText((String) fromMessage.get("paragraph"));
+    QuboleServerHelper.setEmailForParagraph(p, conn);
     note.persist(subject);
     broadcastParagraph(note, p);;
   }
@@ -1133,6 +1134,7 @@ public class NotebookServer extends WebSocketServlet implements
       p.setAuthenticationInfo(new AuthenticationInfo());
     }
 
+    QuboleServerHelper.setEmailForParagraph(p, conn);
     Map<String, Object> params = (Map<String, Object>) fromMessage
        .get("params");
     p.settings.setParams(params);
