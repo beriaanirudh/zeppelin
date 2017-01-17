@@ -204,9 +204,4 @@ public class PrestoInterpreter extends Interpreter {
         PrestoInterpreter.class.getName() + this.hashCode());
   }
 
-  @Override
-  public List<String> completion(String buf, int cursor) {
-    return null;
-  }
-
 }
