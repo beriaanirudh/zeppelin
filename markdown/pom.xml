@@ -32,6 +32,11 @@
   <version>0.6.2</version>
   <name>Zeppelin: Markdown interpreter</name>
 
+  <properties>
+    <commons.lang3.version>3.4</commons.lang3.version>
+  </properties>
+
+
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -56,6 +61,12 @@
       <artifactId>slf4j-log4j12</artifactId>
     </dependency>
     
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>${commons.lang3.version}</version>
+    </dependency>
+
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

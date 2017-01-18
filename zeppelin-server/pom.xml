@@ -36,6 +36,7 @@
     <cxf.version>2.7.7</cxf.version>
     <commons.httpclient.version>4.3.6</commons.httpclient.version>
     <hadoop-common.version>2.6.0</hadoop-common.version>
+    <commons.lang3.version>3.4</commons.lang3.version>
   </properties>
 
   <dependencyManagement>
@@ -318,6 +319,10 @@
         <exclusion>
           <groupId>org.eclipse.jetty.websocket</groupId>
           <artifactId>websocket-client</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-lang3</artifactId>
         </exclusion>
       </exclusions>
     </dependency>

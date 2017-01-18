@@ -16,6 +16,7 @@
  */
 
 package org.apache.zeppelin.dep;
+
 import org.sonatype.aether.repository.Authentication;
 /**
  *
