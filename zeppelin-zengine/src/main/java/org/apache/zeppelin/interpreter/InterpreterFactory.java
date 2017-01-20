@@ -534,6 +534,8 @@ public class InterpreterFactory implements InterpreterGroupFactory {
       intpSetting.setInterpreterGroupFactory(this);
       interpreterSettings.put(intpSetting.id(), intpSetting);
       saveToFile();
+      // Sync interpreter settings to Object Store
+      QuboleUtil.putInterpretersToObjectStore();
       return intpSetting;
     }
   }
@@ -679,6 +681,8 @@ public class InterpreterFactory implements InterpreterGroupFactory {
           }
         }
         saveToFile();
+        // Sync interpreter settings to Object Store
+        QuboleUtil.putInterpretersToObjectStore();
       }
     }
 
@@ -803,6 +807,8 @@ public class InterpreterFactory implements InterpreterGroupFactory {
           loadInterpreterDependencies(intpsetting);
 
           saveToFile();
+          // Sync interpreter settings to Object Store
+          QuboleUtil.putInterpretersToObjectStore();
         } catch (Exception e) {
           throw e;
         } finally {
