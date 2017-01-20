@@ -99,6 +99,7 @@ public class NotebookServer extends WebSocketServlet implements
       add(OP.CLONE_NOTE);
       add(OP.IMPORT_NOTE);
       add(OP.LIST_NOTES);
+      add(OP.RELOAD_NOTES_FROM_REPO);
     }
   };
 
