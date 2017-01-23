@@ -1115,14 +1115,33 @@ public class NotebookRestApi {
 
     // Create the JSON Object
     JsonObject propObj = (JsonObject) new JsonParser().parse(req);
-    JsonElement jsonElement = propObj.get("name");
-    String name = jsonElement.getAsString();
-
     Note note = notebook.getNote(noteId);
-    note.setName(name);
-    note.persist(null);
-    QuboleUtil.updateNoteNameChangeInRails(note);
-    ZeppelinServer.notebookWsServer.refresh(note);
+    JsonElement jsonElement = propObj.get("name");
+    if (jsonElement != null) {
+      String name = jsonElement.getAsString();
+      note.setName(name);
+      note.persist(null);
+      QuboleUtil.updateNoteNameChangeInRails(note);
+      ZeppelinServer.notebookWsServer.refresh(note);
+    }
+    
+    jsonElement = propObj.get("location");
+    if (jsonElement != null) {
+      String newS3Loc = jsonElement.getAsString();
+      if (StringUtils.isEmpty(newS3Loc)) {
+        LOG.error("New note location for noteId {} is null or empty.", noteId);
+        return new JsonResponse<>(Status.INTERNAL_SERVER_ERROR).build();
+      }
+      QuboleNoteAttributes noteAttr = note.getQuboleNoteAttributes();
+      if (noteAttr != null) {
+        noteAttr.setLocation(newS3Loc);
+        LOG.info("Moving note id {} to location {}.", noteId, newS3Loc);
+      }
+      else {
+        LOG.error("Note attributes for noteId {} not found.", noteId);
+        return new JsonResponse<>(Status.INTERNAL_SERVER_ERROR).build();
+      }
+    }
 
     JsonResponse<String> jsonResponse = new JsonResponse<String>(Status.OK);
     return jsonResponse.build();
