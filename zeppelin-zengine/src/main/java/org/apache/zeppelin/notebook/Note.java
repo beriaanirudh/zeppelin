@@ -417,7 +417,7 @@ public class Note implements Serializable, JobListener {
         p.setAuthenticationInfo(authenticationInfo);
         p.setNoteReplLoader(replLoader);
         run(p.getId());
-        QuboleEventUtils.saveEvent(EVENTTYPE.PARAGRAPH_EXECUTION_START, null, p);
+        QuboleEventUtils.saveEvent(EVENTTYPE.PARAGRAPH_EXECUTION_START, cronExecutingUser, p);
       }
     }
   }

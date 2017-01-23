@@ -509,6 +509,8 @@ public class NotebookServer extends WebSocketServlet implements
     if (note != null) {
       boolean cronUpdated = isCronUpdated(config, note.getConfig());
       note.setName(name);
+      config.put(QuboleServerHelper.CRON_EXECUTING_USER,
+          QuboleServerHelper.getUserForConn(conn));
       note.setConfig(config);
       if (cronUpdated) {
         notebook.refreshCron(note.id());
@@ -1001,6 +1003,8 @@ public class NotebookServer extends WebSocketServlet implements
 
     Paragraph p = note.getParagraph(paragraphId);
     p.abort();
+    QuboleEventUtils.saveEvent(EVENTTYPE.PARAGRAPH_CANCEL,
+        QuboleServerHelper.getUserForConn(conn), p);
   }
 
   private void runParagraph(NotebookSocket conn, HashSet<String> userAndRoles, Notebook notebook,

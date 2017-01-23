@@ -10,6 +10,7 @@ public class QuboleServerHelper {
 
   private static final Map<NotebookSocket, String> socketToUserIdMap = new ConcurrentHashMap<>();
   public static final String QBOL_USER_ID = "qboluserid";
+  public static final String CRON_EXECUTING_USER = "cronExecutingUser";
 
   public static void addConnToUserMapping(NotebookSocket conn) {
     String userId = conn.getRequest().getHeader(QBOL_USER_ID);
