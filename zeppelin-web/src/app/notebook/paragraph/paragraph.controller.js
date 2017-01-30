@@ -381,7 +381,7 @@ angular.module('zeppelinWebApp')
             $scope.dirtyText = undefined;
             $scope.originalText = angular.copy(data.paragraph.text);
           } else { // if there're local update, keep it.
-            $scope.paragraph.text = $scope.dirtyText;
+            $scope.paragraph.text = data.paragraph.text;
           }
         } else {
           $scope.paragraph.text = data.paragraph.text;
