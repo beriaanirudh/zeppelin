@@ -24,3 +24,9 @@ if [[ -d "/usr/lib/spark" ]]
 then
 export SPARK_HOME=/usr/lib/spark
 fi
+
+source /usr/lib/hustler/bin/qubole-bash-lib.sh
+ZEPPELIN_USE_RECOMMENDED_JAVA_VERSION=`nodeinfo zeppelin_use_recommended_java_version`
+if [[ "true" == "${ZEPPELIN_USE_RECOMMENDED_JAVA_VERSION}" ]]; then
+  export JAVA_HOME=/usr/java/jdk1.7.0_67
+fi
