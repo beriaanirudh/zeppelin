@@ -175,6 +175,12 @@
             <fileset>
               <directory>bower_components</directory>
             </fileset>
+            <fileset>
+              <directory>.</directory>
+              <includes>
+                <include>**/populate_template_cache.js</include>
+              </includes>
+            </fileset>
           </filesets>
         </configuration>
       </plugin>
