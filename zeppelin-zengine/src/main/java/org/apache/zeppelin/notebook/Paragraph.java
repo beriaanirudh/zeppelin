@@ -66,10 +66,13 @@ public class Paragraph extends Job implements Serializable, Cloneable {
    * donot want it to appear in note.json. This
    * will be consumed in-memory while sending back qlog
    * to middleware.
+
    */
   private transient Integer queryHistId;
   private Map<String, Object> config; // paragraph configs like isOpen, colWidth, etc
   public final GUI settings;          // form and parameter settings
+  private Map<String, ParagraphRuntimeInfo> runtimeInfos;
+
 
   @VisibleForTesting
   Paragraph() {
@@ -493,5 +496,53 @@ public class Paragraph extends Job implements Serializable, Cloneable {
       }
     }
     return scriptBody;
+  }
+
+  public void updateRuntimeInfos(String label, String tooltip, Map<String, String> infos,
+      String group, String intpSettingId) {
+    if (this.runtimeInfos == null) {
+      this.runtimeInfos = new HashMap<String, ParagraphRuntimeInfo>();
+    }
+
+    if (infos != null) {
+      for (String key : infos.keySet()) {
+        ParagraphRuntimeInfo info = this.runtimeInfos.get(key);
+        if (info == null) {
+          info = new ParagraphRuntimeInfo(key, label, tooltip,  group, intpSettingId);
+          this.runtimeInfos.put(key, info);
+        }
+        info.addValue(infos.get(key));
+      }
+    }
+  }
+
+  /**
+   * Remove runtimeinfo taht were got from the setting with id settingId
+   * @param settingId
+   */
+  public void clearRuntimeInfo(String settingId) {
+    if (settingId != null) {
+      Set<String> keys = runtimeInfos.keySet();
+      if (keys.size() > 0) {
+        List<String> infosToRemove = new ArrayList<>();
+        for (String key : keys) {
+          ParagraphRuntimeInfo paragraphRuntimeInfo = runtimeInfos.get(key);
+          if (paragraphRuntimeInfo.getInterpreterSettingId().equals(settingId)) {
+            infosToRemove.add(key);
+          }
+        }
+        if (infosToRemove.size() > 0) {
+          for (String info : infosToRemove) {
+            runtimeInfos.remove(info);
+          }
+        }
+      }
+    } else {
+      this.runtimeInfos = null;
+    }
+  }
+
+  public Map<String, ParagraphRuntimeInfo> getRuntimeInfos() {
+    return runtimeInfos;
   }
 }

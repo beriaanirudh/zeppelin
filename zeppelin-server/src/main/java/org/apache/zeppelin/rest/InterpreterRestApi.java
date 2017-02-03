@@ -51,6 +51,7 @@ import org.slf4j.LoggerFactory;
 import com.google.gson.Gson;
 import org.sonatype.aether.RepositoryException;
 import org.sonatype.aether.repository.RemoteRepository;
+import org.apache.zeppelin.socket.NotebookServer;
 
 /**
  * Interpreter Rest API
@@ -62,6 +63,7 @@ public class InterpreterRestApi {
   Logger logger = LoggerFactory.getLogger(InterpreterRestApi.class);
 
   private InterpreterFactory interpreterFactory;
+  private NotebookServer notebookServer;
 
   Gson gson = new Gson();
 
@@ -69,8 +71,10 @@ public class InterpreterRestApi {
 
   }
 
-  public InterpreterRestApi(InterpreterFactory interpreterFactory) {
+  public InterpreterRestApi(InterpreterFactory interpreterFactory,
+                                      NotebookServer notebookWsServer) {
     this.interpreterFactory = interpreterFactory;
+    this.notebookServer = notebookWsServer;
   }
 
   /**
@@ -199,14 +203,17 @@ public class InterpreterRestApi {
   public Response restartSetting(@Context HttpServletRequest request,
       @PathParam("settingId") String settingId) {
     logger.info("Restart interpreterSetting {}", settingId);
+    InterpreterSetting setting = interpreterFactory.get(settingId);
+
     try {
       interpreterFactory.restart(settingId);
+      notebookServer.clearParagraphRuntimeInfo(setting);
+
     } catch (InterpreterException e) {
       logger.error("Exception in InterpreterRestApi while restartSetting ", e);
       return new JsonResponse(
           Status.NOT_FOUND, e.getMessage(), ExceptionUtils.getStackTrace(e)).build();
     }
-    InterpreterSetting setting = interpreterFactory.get(settingId);
     if (setting == null) {
       return new JsonResponse(Status.NOT_FOUND, "", settingId).build();
     }

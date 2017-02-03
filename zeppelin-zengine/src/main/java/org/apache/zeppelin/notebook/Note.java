@@ -310,6 +310,7 @@ public class Note implements Serializable, JobListener {
         Paragraph p = paragraphs.get(i);
         if (p.getId().equals(paragraphId)) {
           p.setReturn(null, null);
+          p.clearRuntimeInfo(null);
           return p;
         }
       }
@@ -446,6 +447,7 @@ public class Note implements Serializable, JobListener {
     Paragraph p = getParagraph(paragraphId);
     p.setNoteReplLoader(replLoader);
     p.setListener(jobListenerFactory.getParagraphJobListener(this));
+    p.clearRuntimeInfo(null);
     String requiredReplName = p.getRequiredReplName();
     Interpreter intp = replLoader.get(requiredReplName);
     if (intp == null) {

@@ -109,6 +109,8 @@ angular.module('zeppelinWebApp').factory('websocketEvents', function($rootScope,
       $rootScope.$broadcast('moveParagraph', data.id, data.index);
     } else if (op === 'NOTE_UPDATED') {
       $rootScope.$broadcast('updateNote', data.name, data.config, data.info);
+    } else if (op === 'PARAS_INFO') {
+      $rootScope.$broadcast('updateParaInfos', data);
     }
   });
 

@@ -367,6 +367,7 @@ public class Notebook {
           lastUpdatedDate.before(p.getDateFinished())) {
         lastUpdatedDate = p.getDateFinished();
       }
+      p.clearRuntimeInfo(null);
     }
 
     Map<String, List<AngularObject>> savedObjects = note.getAngularObjects();

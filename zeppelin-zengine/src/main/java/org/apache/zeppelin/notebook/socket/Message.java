@@ -118,7 +118,9 @@ public class Message {
     PARAGRAPH_ADDED,              // [s-c] paragraph is added
     PARAGRAPH_REMOVED,            // [s-c] paragraph deleted
     PARAGRAPH_MOVED,              // [s-c] paragraph moved
-    NOTE_UPDATED                  // [s-c] paragraph updated(name, config)
+    NOTE_UPDATED,                  // [s-c] paragraph updated(name, config)
+    PARAS_INFO                    // [s-c] paragraph runtime infos
+
   }
 
   public OP op;

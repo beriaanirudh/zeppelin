@@ -47,6 +47,7 @@ import org.apache.zeppelin.interpreter.InterpreterResult;
 import org.apache.zeppelin.interpreter.InterpreterSetting;
 import org.apache.zeppelin.interpreter.remote.RemoteInterpreterProcessListener;
 import org.apache.zeppelin.notebook.*;
+import org.apache.zeppelin.json.NotebookTypeAdapterFactory;
 import org.apache.zeppelin.notebook.socket.Message;
 import org.apache.zeppelin.notebook.socket.Message.OP;
 import org.apache.zeppelin.scheduler.Job;
@@ -61,6 +62,10 @@ import org.quartz.SchedulerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Queues;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+
 /**
  * Zeppelin websocket service.
  */
@@ -68,7 +73,22 @@ public class NotebookServer extends WebSocketServlet implements
         NotebookSocketListener, JobListenerFactory, AngularObjectRegistryListener,
         RemoteInterpreterProcessListener {
   private static final Logger LOG = LoggerFactory.getLogger(NotebookServer.class);
-  Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").create();
+  Gson gson = new GsonBuilder()
+      .registerTypeAdapterFactory(new NotebookTypeAdapterFactory<Paragraph>(Paragraph.class) {
+        @Override
+        protected void beforeWrite(Paragraph source, JsonElement toSerialize) {
+          Map<String, ParagraphRuntimeInfo> runtimeInfos = source.getRuntimeInfos();
+          if (runtimeInfos != null) {
+            JsonElement jsonTree = gson.toJsonTree(runtimeInfos);
+            if (toSerialize instanceof JsonObject) {
+              JsonObject jsonObj = (JsonObject) toSerialize;
+              jsonObj.add("runtimeInfos", jsonTree);
+            }
+          }
+        }
+      }).setDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").create();
+  final Map<String, List<NotebookSocket>> noteSocketMap = new HashMap<>();
+  final Queue<NotebookSocket> connectedSockets = new ConcurrentLinkedQueue<>();
 
   private static final Set<OP> opsNotAllowedInACL = new HashSet<OP>() {{
       add(OP.NEW_NOTE);
@@ -78,9 +98,6 @@ public class NotebookServer extends WebSocketServlet implements
       add(OP.LIST_NOTES);
     }
   };
-
-  final Map<String, List<NotebookSocket>> noteSocketMap = new HashMap<>();
-  final Queue<NotebookSocket> connectedSockets = new ConcurrentLinkedQueue<>();
 
   private Notebook notebook() {
     return ZeppelinServer.notebook;
@@ -1406,5 +1423,52 @@ public class NotebookServer extends WebSocketServlet implements
     }
   }
 
+  @Override
+  public void onParaInfosReceived(String noteId, String paragraphId,
+      String interpreterSettingId, Map<String, String> metaInfos) {
+    Note note = notebook().getNote(noteId);
+    if (note != null) {
+      Paragraph paragraph = note.getParagraph(paragraphId);
+      if (paragraph != null) {
+        InterpreterSetting setting = notebook().getInterpreterFactory()
+                                               .get(interpreterSettingId);
+        setting.addNoteToPara(noteId, paragraphId);
+        String label = metaInfos.get("label");
+        String tooltip = metaInfos.get("tooltip");
+        List<String> keysToRemove = Arrays.asList("noteId", "paraId", "label", "tooltip");
+        for (String removeKey : keysToRemove) {
+          metaInfos.remove(removeKey);
+        }
+        paragraph
+            .updateRuntimeInfos(label, tooltip, metaInfos, setting.getGroup(), setting.id());
+        broadcast(
+            note.getId(),
+            new Message(OP.PARAS_INFO).put("id", paragraphId).put("infos",
+                paragraph.getRuntimeInfos()));
+      }
+    }
+  }
+
+  public void clearParagraphRuntimeInfo(InterpreterSetting setting) {
+    Map<String, Set<String>> noteIdAndParaMap = setting.getNoteIdAndParaMap();
+    if (noteIdAndParaMap != null && !noteIdAndParaMap.isEmpty()) {
+      for (String noteId : noteIdAndParaMap.keySet()) {
+        Set<String> paraIdSet = noteIdAndParaMap.get(noteId);
+        if (paraIdSet != null && !paraIdSet.isEmpty()) {
+          for (String paraId : paraIdSet) {
+            Note note = notebook().getNote(noteId);
+            if (note != null) {
+              Paragraph paragraph = note.getParagraph(paraId);
+              if (paragraph != null) {
+                paragraph.clearRuntimeInfo(setting.id());
+                broadcast(noteId, new Message(OP.PARAGRAPH).put("paragraph", paragraph));
+              }
+            }
+          }
+        }
+      }
+    }
+    setting.clearNoteIdAndParaMap();
+  }
 }
 

@@ -41,6 +41,7 @@ import org.apache.zeppelin.display.Input.ParamOption;
 import org.apache.zeppelin.interpreter.InterpreterContext;
 import org.apache.zeppelin.interpreter.InterpreterContextRunner;
 import org.apache.zeppelin.interpreter.InterpreterException;
+import org.apache.zeppelin.interpreter.remote.RemoteEventClientWrapper;
 import org.apache.zeppelin.spark.dep.SparkDependencyResolver;
 import org.apache.zeppelin.resource.Resource;
 import org.apache.zeppelin.resource.ResourcePool;
@@ -57,6 +58,7 @@ import scala.Unit;
 public class ZeppelinContext {
   private SparkDependencyResolver dep;
   private static final Logger LOG = LoggerFactory.getLogger(ZeppelinContext.class);
+  private static RemoteEventClientWrapper eventClient;
   private InterpreterContext interpreterContext;
   private int maxResult;
   private List<Class> supportedClasses;
@@ -205,7 +207,7 @@ public class ZeppelinContext {
       Object df, int maxResult) {
     Object[] rows = null;
     Method take;
-    String jobGroup = "zeppelin-" + interpreterContext.getParagraphId();
+    String jobGroup = Utils.buildJobGroupId(interpreterContext);
     sc.setJobGroup(jobGroup, "Zeppelin", false);
 
     Qlog.checkAndSendQlog(interpreterContext, df);
@@ -767,4 +769,21 @@ public class ZeppelinContext {
     return resourcePool.getAll();
   }
 
+  /**
+   * Get the event client
+   */
+  @ZeppelinApi
+  public static RemoteEventClientWrapper getEventClient() {
+    return eventClient;
+  }
+
+  /**
+   * Set event client
+   */
+  @ZeppelinApi
+  public void setEventClient(RemoteEventClientWrapper eventClient) {
+    if (ZeppelinContext.eventClient == null) {
+      ZeppelinContext.eventClient = eventClient;
+    }
+  }
 }

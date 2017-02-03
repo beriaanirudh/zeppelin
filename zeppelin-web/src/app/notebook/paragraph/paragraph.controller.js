@@ -1349,6 +1349,12 @@ angular.module('zeppelinWebApp')
     return groupedThousandsWith3DigitsFormatter(d);
   };
 
+  $scope.$on('updateParaInfos', function(event, data) {
+    if (data.id === $scope.paragraph.id) {
+      $scope.paragraph.runtimeInfos = data.infos;
+    }
+  });
+
   var setD3Chart = function(type, data, refresh) {
     if (!$scope.chart[type]) {
       var chart = nv.models[type]();
