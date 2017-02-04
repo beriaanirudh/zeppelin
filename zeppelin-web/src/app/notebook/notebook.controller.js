@@ -636,6 +636,7 @@ angular.module('zeppelinWebApp').controller('NotebookCtrl',
     } else {
       $scope.openSetting();
       $scope.closePermissions();
+      angular.element('html, body').animate({ scrollTop: 0 }, 'slow');
     }
   };
 
