@@ -103,6 +103,7 @@ public class ShellInterpreter extends Interpreter {
         logger.error(e1.getMessage());
         msg = e1.getMessage();
       }
+      msg = "";
       if (exitValue == 143) {
         code = Code.INCOMPLETE;
         msg = msg + "Paragraph received a SIGTERM.\n";
