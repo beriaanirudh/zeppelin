@@ -50,7 +50,7 @@ limitations under the License.
         <i class="fa fa-eraser"></i>
       </button>
 
-      <button type="button"
+      <!--button type="button"
               class="btn btn-default btn-xs"
               ng-hide="viewOnly"
               tooltip-placement="bottom" tooltip="Clone the notebook" data-source-note-name="{{note.name}}"
@@ -71,7 +71,7 @@ limitations under the License.
               data-toggle="dropdown"
               tooltip-placement="bottom" tooltip="Version control">
         <i class="fa fa-file-code-o"></i>
-      </button>
+      </button-->
       <ul class="dropdown-menu" role="menu" style="width:250px">
         <li>
           <div class="commit-container">
@@ -97,13 +97,13 @@ limitations under the License.
 
 <!-- put the delete action by itself for your protection -->
       <span class="labelBtn" style="vertical-align:middle; display:inline-block;">
-        <button type="button"
+        <!--button type="button"
                 class="btn btn-default btn-xs hide"
                 ng-click="removeNote(note.id)"
                 ng-hide="viewOnly"
                 tooltip-placement="bottom" tooltip="Remove the notebook">
           <i class="icon-trash"></i>
-        </button>
+        </button-->
       </span>
       <span class="labelBtn" style="vertical-align:middle; display:inline-block;">
         <button type="button"
@@ -185,12 +185,12 @@ limitations under the License.
             tooltip-placement="bottom" tooltip="Interpreter binding">
         <i class="fa fa-cog" ng-style="{color: showSetting ? '#3071A9' : 'black' }"></i>
       </span>
-      <span class="setting-btn"
+      <!--span class="setting-btn"
             type="button"
             ng-click="togglePermissions()"
             tooltip-placement="bottom" tooltip="Note permissions">
         <i class="fa fa-lock" ng-style="{color: showPermissions ? '#3071A9' : 'black' }"></i>
-      </span>
+      </span-->
 
       <span class="btn-group">
         <button type="button" class="btn btn-default btn-xs dropdown-toggle"
