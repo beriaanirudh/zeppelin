@@ -73,6 +73,8 @@ public class NotebookServer extends WebSocketServlet implements
         NotebookSocketListener, JobListenerFactory, AngularObjectRegistryListener,
         RemoteInterpreterProcessListener {
   private static final Logger LOG = LoggerFactory.getLogger(NotebookServer.class);
+  Gson gson = new Gson();
+  /*
   Gson gson = new GsonBuilder()
       .registerTypeAdapterFactory(new NotebookTypeAdapterFactory<Paragraph>(Paragraph.class) {
         @Override
@@ -87,6 +89,7 @@ public class NotebookServer extends WebSocketServlet implements
           }
         }
       }).setDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").create();
+  */
   final Map<String, List<NotebookSocket>> noteSocketMap = new HashMap<>();
   final Queue<NotebookSocket> connectedSockets = new ConcurrentLinkedQueue<>();
 
