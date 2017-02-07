@@ -53,6 +53,7 @@ import org.apache.spark.scheduler.SparkListenerJobStart;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.ui.SparkUI;
 import org.apache.spark.ui.jobs.JobProgressListener;
+import org.apache.hadoop.hive.ql.parse.SubQueryUtils.ISubQueryJoinInfo;
 import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.zeppelin.interpreter.Interpreter;
 import org.apache.zeppelin.interpreter.InterpreterContext;
@@ -117,6 +118,7 @@ public class SparkInterpreter extends Interpreter {
   private SparkOutputStream out;
   private SparkDependencyResolver dep;
   private static String sparkUrl;
+  private static boolean isQuboleSpark = true;
 
   /**
    * completer - org.apache.spark.repl.SparkJLineCompletion (scala 2.10)
@@ -187,7 +189,7 @@ public class SparkInterpreter extends Interpreter {
       private String getJobUrl(int jobId) {
         String jobUrl = null;
         if (sparkUrl != null) {
-          jobUrl = sparkUrl + "/jobs/job?id=" + jobId;
+          jobUrl = QuboleSparkHelper.jobUrl(isQuboleSpark, sparkUrl, jobId);
         }
         return jobUrl;
       }
@@ -1024,6 +1026,7 @@ public class SparkInterpreter extends Interpreter {
 
     //If standalone mode
     if (sparkUiOption == null) {
+      isQuboleSpark = false;
       sparkUiOption = (Option<SparkUI>) Utils.invokeMethod(sc, "ui");
     }
     SparkUI sparkUi = sparkUiOption.get();
