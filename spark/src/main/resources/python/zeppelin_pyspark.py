@@ -46,6 +46,9 @@ class Logger(object):
   def flush(self):
     pass
 
+  def flush(self):
+    intp.appendOutput("\n")
+
 
 class PyZeppelinContext(dict):
   def __init__(self, zc):

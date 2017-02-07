@@ -82,6 +82,7 @@ public class PySparkInterpreter extends Interpreter implements ExecuteResultHand
 
     try {
       File scriptFile = File.createTempFile("zeppelin_pyspark-", ".py");
+      // TODO(bharatb): Check if we need to fix this. it is always /tmp/ for all intps?
       scriptPath = scriptFile.getAbsolutePath();
     } catch (IOException e) {
       throw new InterpreterException(e);

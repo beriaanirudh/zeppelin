@@ -32,4 +32,4 @@ LAST_PACKAGE_NUM=$(echo ${LAST_PACKAGE} | awk -F- '{print $1;}')
 NEW_PACKAGE_NUM=$(expr $LAST_PACKAGE_NUM + 1)
 NEW_PACKAGE_NUM=$(printf "%05d" $NEW_PACKAGE_NUM)
 $S3CMD cp ${SOURCE_S3_PACKAGE} ${S3_FOLDER}/${NEW_PACKAGE_NUM}-${SOURCE_PACKAGE_NAME}.tar.gz
-$S3CMD cp s3://paid-qubole/archives/zeppelin/zeppelin-1.6.0-rc/install.sh ${S3_FOLDER}/
+$S3CMD cp s3://qubole-packages/archives/zeppelin/install.sh ${S3_FOLDER}/
