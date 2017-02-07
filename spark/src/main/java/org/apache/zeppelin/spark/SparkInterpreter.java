@@ -1020,7 +1020,12 @@ public class SparkInterpreter extends Interpreter {
     if (sparkUrl != null) {
       return sparkUrl;
     }
-    Option<SparkUI> sparkUiOption = (Option<SparkUI>) Utils.invokeMethod(sc, "ui");
+    Option<SparkUI> sparkUiOption = (Option<SparkUI>) Utils.invokeMethod(sc, "getSparkUIURL");
+
+    //If standalone mode
+    if (sparkUiOption == null) {
+      sparkUiOption = (Option<SparkUI>) Utils.invokeMethod(sc, "ui");
+    }
     SparkUI sparkUi = sparkUiOption.get();
     String sparkWebUrl = sparkUi.appUIAddress();
     return sparkWebUrl;

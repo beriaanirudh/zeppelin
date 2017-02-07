@@ -37,7 +37,7 @@ public class InterpreterSetting {
   private String description;
   private Properties properties;
   private transient InterpreterGroupFactory interpreterGroupFactory;
-  private transient Map<String, String> infos; 
+  private Map<String, String> infos;
 
   private List<InterpreterInfo> interpreterGroup;
   private transient Map<String, InterpreterGroup> interpreterGroupRef =
