@@ -18,7 +18,6 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.zeppelin.lock.impl.QuboleLockManager;
 import org.apache.zeppelin.notebook.Note;
 import org.apache.zeppelin.notebook.Notebook;
 import org.apache.zeppelin.notebook.NotebookAuthorization;
@@ -54,7 +53,6 @@ public class TestQuboleACLHelper {
 
   @Before
   public void beforeTests() {
-    QuboleACLHelper.enableAccountFeatureForUnitTests();
     PowerMockito.mockStatic(QuboleUtil.class);
     zeppelinId = "random-id";
     qbolUserId = "123";
@@ -69,7 +67,7 @@ public class TestQuboleACLHelper {
     when(notebook.getNote(zeppelinId)).thenReturn(note);
     when(note.getQuboleNoteAttributes()).thenReturn(attrs);
     when(notebook.getNotebookAuthorization()).thenReturn(auth);
-    when(request.getHeader(QuboleLockManager.getInstance().getUserIdHeaderName())).thenReturn(qbolUserId);
+    when(request.getHeader(QuboleServerHelper.QBOL_USER_ID)).thenReturn(qbolUserId);
 
   }
 
@@ -93,7 +91,7 @@ public class TestQuboleACLHelper {
 
   @Test
   public void testCanCreateNote() {
-    when(request.getHeader(QuboleLockManager.getInstance().getUserIdHeaderName())).thenReturn(qbolUserId);
+    when(request.getHeader(QuboleServerHelper.QBOL_USER_ID)).thenReturn(qbolUserId);
     String res = "[{\"qbolUserId\":\"" + qbolUserId + "\", \"permissions\":{\"create\":true}}]";
     try {
       when(QuboleUtil.getResponseFromConnection(any(HttpURLConnection.class))).thenReturn(res);
@@ -126,7 +124,7 @@ public class TestQuboleACLHelper {
 
       String qbolUserId2 = "" + i;
       HttpServletRequest request2 = mock(HttpServletRequest.class);
-      when(request2.getHeader(QuboleLockManager.getInstance().getUserIdHeaderName())).thenReturn(qbolUserId2);
+      when(request2.getHeader(QuboleServerHelper.QBOL_USER_ID)).thenReturn(qbolUserId2);
 
       List<Map<String, Object>> list = new ArrayList();
       Map<String, Object> result = new HashMap<>();
