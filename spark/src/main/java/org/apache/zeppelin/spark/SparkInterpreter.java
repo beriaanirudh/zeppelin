@@ -595,12 +595,15 @@ public class SparkInterpreter extends Interpreter {
       if (conf.contains("spark.yarn.dist.archives")) {
         archives = conf.get("spark.yarn.dist.archives");
       }
-      if (archives != null) {
+      if (archives != null && !archives.contains("sparkr.zip")) {
         archives = archives + "," + sparkRPath + "#sparkr";
-      } else {
+        conf.set("spark.yarn.dist.archives", archives);
+        logger.info("Archive Path is {}", archives);
+      } else if (archives == null){
         archives = sparkRPath + "#sparkr";
+        conf.set("spark.yarn.dist.archives", archives);
+        logger.info("Archive Path is {}", archives);
       }
-      conf.set("spark.yarn.dist.archives", archives);
     } else {
       logger.warn("sparkr.zip is not found, sparkr may not work.");
     }
