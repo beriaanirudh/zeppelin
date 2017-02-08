@@ -38,7 +38,9 @@ import static  org.apache.zeppelin.socket.QuboleACLHelper.Operation.WRITE;
 public class QuboleServerHelper {
 
   private static final Map<NotebookSocket, String> socketToUserIdMap = new ConcurrentHashMap<>();
+  private static final Map<String, String> userIdToEmailMap = new ConcurrentHashMap<>();
   public static final String QBOL_USER_ID = "qboluserid";
+  public static final String QBOL_USER_EMAIL = "qboluseremail";
   public static final String CRON_EXECUTING_USER = "cronExecutingUser";
   private static final String HEADER_FETCH_KEY = "Qubole-Operation";
   private static final String COMMIT_OPERATION = "commit";
@@ -50,6 +52,11 @@ public class QuboleServerHelper {
     String userId = conn.getRequest().getHeader(QBOL_USER_ID);
     if (conn != null && userId != null) {
       socketToUserIdMap.put(conn, userId);
+    }
+
+    String email = conn.getRequest().getHeader(QBOL_USER_EMAIL);
+    if (conn != null && email != null) {
+      userIdToEmailMap.put(userId, email);
     }
   }
 
