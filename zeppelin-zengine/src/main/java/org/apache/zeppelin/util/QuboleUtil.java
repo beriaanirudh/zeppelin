@@ -13,6 +13,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DateFormat;
@@ -70,9 +71,7 @@ public class QuboleUtil {
   private static final String opsApiPathV2 = "/opsapi/v2/zeppelin";
   private static final String permissionPath = "/opsapi/v2/list_access_perms";
   private static final String enable_eventbus = System.getenv("ENABLE_EVENTBUS");
-  private static final String eventbus_url = System.getenv("EVENTBUS_URL");
   private static final String clusterId = System.getenv("CLUSTER_ID");
-  private static final String clusterTag = System.getenv("CLUSTER_TAG");
   private static final ZeppelinConfiguration zepConfig = ZeppelinConfiguration.create();
 
   public static final String INTERPRETER_SETTINGS = "interpreterSettings";
@@ -150,54 +149,37 @@ public class QuboleUtil {
     String apiPath = opsApiPath + "/events/";
     Map<String, String> params = new HashMap<String, String>();
     params.put("event", event);
-    sendRequestToEventbus(params);
+    sendRequestToEventbus(event);
     return sendRequestToQuboleRails(apiPath, params, "POST", numRetries);
   }
-
-  private static void sendRequestToEventbus(final Map<String, String> params) {
-
+  
+  private static void sendRequestToEventbus(final String event) {
+    
     if ("true".equals(enable_eventbus)) {
       try {
         eventbusExecutor.execute(new Runnable() {
           @Override
           public void run() {
             try {
-              if (params != null) {
-                HttpURLConnection connection = (HttpURLConnection) (new URL(eventbus_url))
-                    .openConnection();
-                connection.setRequestProperty("Content-Type", "application/json");
-                connection.setRequestProperty("Accept", "application/json");
-                connection.setRequestMethod("POST");
-                connection.setDoOutput(true);
-
-                Gson gson = new Gson();
-
-                List<String> messages = new ArrayList<>();
-                List<String> keys = new ArrayList<>();
-
-                Map<String, Object> json = new HashMap<String, Object>();
-
-                String jsonData = gson.toJson(params);
-                messages.add(jsonData);
-                keys.add(clusterTag);
-
-                json.put("auth_token", getQuboleApiToken());
-                json.put("topic", "zeppelinmetrics");
-                json.put("key", keys);
-                json.put("message", messages);
-
-                OutputStreamWriter out = new OutputStreamWriter(connection.getOutputStream());
-                String message_body = gson.toJson(json);
-                out.write(message_body);
-                out.flush();
-                out.close();
-                int responseCode = connection.getResponseCode();
-                if (responseCode == 200) {
-                  LOG.debug("POST request to eventbus successful");
-                } else {
-                  LOG.warn(responseCode + " error in making call to eventbus");
-                  LOG.warn(connection.getResponseMessage());
-                }
+              String url = "http://localhost:11500/event";
+              String query = String.format("source=%s", "CLUSTER.ZEPPELIN.EVENT");
+              
+              HttpURLConnection connection = (HttpURLConnection) (new URL(url + "?" + query))
+                  .openConnection();
+              connection.setRequestProperty("Content-Type", "application/octet-stream");
+              connection.setRequestMethod("POST");
+              connection.setDoOutput(true);
+              
+              OutputStreamWriter out = new OutputStreamWriter(connection.getOutputStream());
+              out.write(event);
+              out.flush();
+              out.close();
+              int responseCode = connection.getResponseCode();
+              if (responseCode == 201) {
+                LOG.debug("POST request to eventbus successful");
+              } else {
+                LOG.warn(responseCode + " error in making call to eventbus");
+                LOG.warn(connection.getResponseMessage());
               }
             } catch (IOException e) {
               LOG.error("Error while sending to eventbus", e);
@@ -205,7 +187,9 @@ public class QuboleUtil {
           }
         });
       } catch (RejectedExecutionException e) {
-        LOG.error("Spill while sending data to eventbus", e.getMessage()); 
+        LOG.error("Spill while sending data to eventbus", e.getMessage());
+      } catch (Exception e) {
+        LOG.error("Error while sending to eventbus", e);
       }
     }
   }
