@@ -306,6 +306,7 @@ public abstract class AbstractTestRestApi {
     HttpClient httpClient = new HttpClient();
     GetMethod getMethod = new GetMethod(url + path);
     getMethod.addRequestHeader("Origin", url);
+    getMethod.addRequestHeader(ZeppelinRestApiTest.QBOL_USER_ID, ZeppelinRestApiTest.qbolUserId);
     httpClient.executeMethod(getMethod);
     LOG.info("{} - {}", getMethod.getStatusCode(), getMethod.getStatusText());
     return getMethod;
@@ -316,6 +317,7 @@ public abstract class AbstractTestRestApi {
     HttpClient httpClient = new HttpClient();
     DeleteMethod deleteMethod = new DeleteMethod(url + path);
     deleteMethod.addRequestHeader("Origin", url);
+    deleteMethod.addRequestHeader(ZeppelinRestApiTest.QBOL_USER_ID, ZeppelinRestApiTest.qbolUserId);
     httpClient.executeMethod(deleteMethod);
     LOG.info("{} - {}", deleteMethod.getStatusCode(), deleteMethod.getStatusText());
     return deleteMethod;
@@ -326,6 +328,7 @@ public abstract class AbstractTestRestApi {
     HttpClient httpClient = new HttpClient();
     PostMethod postMethod = new PostMethod(url + path);
     postMethod.addRequestHeader("Origin", url);
+    postMethod.addRequestHeader(ZeppelinRestApiTest.QBOL_USER_ID, ZeppelinRestApiTest.qbolUserId);
     RequestEntity entity = new ByteArrayRequestEntity(body.getBytes("UTF-8"));
     postMethod.setRequestEntity(entity);
     httpClient.executeMethod(postMethod);
@@ -338,6 +341,7 @@ public abstract class AbstractTestRestApi {
     HttpClient httpClient = new HttpClient();
     PutMethod putMethod = new PutMethod(url + path);
     putMethod.addRequestHeader("Origin", url);
+    putMethod.addRequestHeader(ZeppelinRestApiTest.QBOL_USER_ID, ZeppelinRestApiTest.qbolUserId);
     RequestEntity entity = new ByteArrayRequestEntity(body.getBytes("UTF-8"));
     putMethod.setRequestEntity(entity);
     httpClient.executeMethod(putMethod);

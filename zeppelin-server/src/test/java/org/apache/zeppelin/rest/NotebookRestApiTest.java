@@ -59,6 +59,8 @@ public class NotebookRestApiTest extends AbstractTestRestApi {
     AbstractTestRestApi.shutDown();
   }
 
+  // Declined by qubole
+  /*
   @Test
   public void testPermissions() throws IOException {
     Note note1 = ZeppelinServer.notebook.createNote(null);
@@ -122,6 +124,7 @@ public class NotebookRestApiTest extends AbstractTestRestApi {
     ZeppelinServer.notebook.removeNote(note2.getId(), null);
 
   }
+  */
 }
 
 

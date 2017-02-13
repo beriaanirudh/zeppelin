@@ -242,7 +242,6 @@ public class NotebookAuthorization {
 
   // return true only if (a intersection b) is non-empty
   private boolean isMember(Set<String> a, Set<String> b) {
-    // allow all operations is ACLs disabled.
     Set<String> intersection = new HashSet<String>(b);
     intersection.retainAll(a);
     return (intersection.size() > 0);

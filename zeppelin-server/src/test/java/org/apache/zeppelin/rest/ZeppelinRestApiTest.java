@@ -18,6 +18,7 @@
 package org.apache.zeppelin.rest;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -32,27 +33,42 @@ import org.apache.zeppelin.notebook.Note;
 import org.apache.zeppelin.notebook.Paragraph;
 import org.apache.zeppelin.scheduler.Job.Status;
 import org.apache.zeppelin.server.ZeppelinServer;
+import org.apache.zeppelin.util.QuboleNoteAttributes;
+import org.apache.zeppelin.util.QuboleUtil;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.sun.jna.platform.win32.SetupApi;
 
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.when;
 
 /**
  * BASIC Zeppelin rest api tests
  *
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@PrepareForTest(QuboleUtil.class)
+@RunWith(PowerMockRunner.class)
+@PowerMockIgnore("javax.management.*")
 public class ZeppelinRestApiTest extends AbstractTestRestApi {
   Gson gson = new Gson();
+  public static final String QBOL_USER_ID = "qboluserid";
 
   @BeforeClass
   public static void init() throws Exception {
+    PowerMockito.mockStatic(QuboleUtil.class);
     AbstractTestRestApi.startUp();
   }
 
@@ -78,6 +94,7 @@ public class ZeppelinRestApiTest extends AbstractTestRestApi {
     LOG.info("testGetNotebookInfo");
     // Create note to get info
     Note note = ZeppelinServer.notebook.createNote(null);
+    setupNoteForQubole(note);
     assertNotNull("can't create new note", note);
     note.setName("note");
     Paragraph paragraph = note.addParagraph();
@@ -89,7 +106,7 @@ public class ZeppelinRestApiTest extends AbstractTestRestApi {
     note.persist(null);
 
     String sourceNoteID = note.getId();
-    GetMethod get = httpGet("/notebook/" + sourceNoteID);
+    GetMethod get = httpGet("/notebook/note/" + sourceNoteID);
     LOG.info("testGetNotebookInfo \n" + get.getResponseBodyAsString());
     assertThat("test notebook get method:", get, isAllowed());
 
@@ -106,6 +123,8 @@ public class ZeppelinRestApiTest extends AbstractTestRestApi {
     assertEquals(paragraphText, paragraphs.get(0).get("text"));
   }
 
+// Will be denied by qubole
+  /*
   @Test
   public void testNotebookCreateWithName() throws IOException {
     String noteName = "Test note name";
@@ -156,6 +175,7 @@ public class ZeppelinRestApiTest extends AbstractTestRestApi {
     ZeppelinServer.notebook.removeNote(newNotebookId, null);
     post.releaseConnection();
   }
+  */
 
   private void testNotebookCreate(String noteName) throws IOException {
     // Call Create Notebook REST API
@@ -170,6 +190,7 @@ public class ZeppelinRestApiTest extends AbstractTestRestApi {
     String newNotebookId =  (String) resp.get("body");
     LOG.info("newNotebookId:=" + newNotebookId);
     Note newNote = ZeppelinServer.notebook.getNote(newNotebookId);
+    setupNoteForQubole(newNote);
     assertNotNull("Can not find new note by id", newNote);
     // This is partial test as newNote is in memory but is not persistent
     String newNoteName = newNote.getName();
@@ -190,22 +211,27 @@ public class ZeppelinRestApiTest extends AbstractTestRestApi {
     LOG.info("testDeleteNote");
     //Create note and get ID
     Note note = ZeppelinServer.notebook.createNote(null);
+    setupNoteForQubole(note);
     String noteId = note.getId();
     testDeleteNotebook(noteId);
   }
 
+  //Denied by qubole 
+  /*
   @Test
   public void testDeleteNoteBadId() throws IOException {
     LOG.info("testDeleteNoteBadId");
     testDeleteNotebook("2AZFXEX97");
     testDeleteNotebook("bad_ID");
   }
+  */
 
 
   @Test
   public void testExportNotebook() throws IOException {
     LOG.info("testExportNotebook");
     Note note = ZeppelinServer.notebook.createNote(null);
+    setupNoteForQubole(note);
     assertNotNull("can't create new note", note);
     note.setName("source note for export");
     Paragraph paragraph = note.addParagraph();
@@ -239,6 +265,7 @@ public class ZeppelinRestApiTest extends AbstractTestRestApi {
     LOG.info("testImortNotebook");
     // create test notebook
     Note note = ZeppelinServer.notebook.createNote(null);
+    setupNoteForQubole(note);
     assertNotNull("can't create new note", note);
     note.setName(noteName);
     Paragraph paragraph = note.addParagraph();
@@ -260,6 +287,7 @@ public class ZeppelinRestApiTest extends AbstractTestRestApi {
 
     assertNotNull("Did not get back a notebook id in body", importId);
     Note newNote = ZeppelinServer.notebook.getNote(importId);
+    setupNoteForQubole(newNote);
     assertEquals("Compare note names", noteName, newNote.getName());
     assertEquals("Compare paragraphs count", note.getParagraphs().size(), newNote.getParagraphs()
         .size());
@@ -285,7 +313,7 @@ public class ZeppelinRestApiTest extends AbstractTestRestApi {
 
   private void testDeleteNotebook(String notebookId) throws IOException {
 
-    DeleteMethod delete = httpDelete(("/notebook/" + notebookId));
+    DeleteMethod delete = httpDelete(("/notebook/note/" + notebookId));
     LOG.info("testDeleteNotebook delete response\n" + delete.getResponseBodyAsString());
     assertThat("Test delete method:", delete, isAllowed());
     delete.releaseConnection();
@@ -296,11 +324,14 @@ public class ZeppelinRestApiTest extends AbstractTestRestApi {
     }
   }
 
+  // Denied by qubole
+  /*
   @Test
   public void testCloneNotebook() throws IOException, CloneNotSupportedException, IllegalArgumentException {
     LOG.info("testCloneNotebook");
     // Create note to clone
     Note note = ZeppelinServer.notebook.createNote(null);
+    setupNoteForQubole(note);
     assertNotNull("can't create new note", note);
     note.setName("source note for clone");
     Paragraph paragraph = note.addParagraph();
@@ -344,12 +375,14 @@ public class ZeppelinRestApiTest extends AbstractTestRestApi {
     assertEquals("List notebooks are equal", ZeppelinServer.notebook.getAllNotes().size(), body.size());
     get.releaseConnection();
   }
+  */
 
   @Test
   public void testNoteJobs() throws IOException, InterruptedException {
     LOG.info("testNoteJobs");
     // Create note to run test.
     Note note = ZeppelinServer.notebook.createNote(null);
+    setupNoteForQubole(note);
     assertNotNull("can't create new note", note);
     note.setName("note for run test");
     Paragraph paragraph = note.addParagraph();
@@ -405,6 +438,7 @@ public class ZeppelinRestApiTest extends AbstractTestRestApi {
     LOG.info("testGetNotebookJob");
     // Create note to run test.
     Note note = ZeppelinServer.notebook.createNote(null);
+    setupNoteForQubole(note);
     assertNotNull("can't create new note", note);
     note.setName("note for run test");
     Paragraph paragraph = note.addParagraph();
@@ -434,7 +468,8 @@ public class ZeppelinRestApiTest extends AbstractTestRestApi {
     Map<String, Object> resp = gson.fromJson(responseBody, new TypeToken<Map<String, Object>>() {
     }.getType());
 
-    List<Map<String, Object>> paragraphs = (List<Map<String, Object>>) resp.get("body");
+    Map<String, List<Map<String, Object>>> quboleResult = (Map<String, List<Map<String, Object>>>) resp.get("body");
+    List<Map<String, Object>> paragraphs = (List<Map<String, Object>>) quboleResult.get("paraInfoMap");
     assertEquals(1, paragraphs.size());
     assertTrue(paragraphs.get(0).containsKey("progress"));
     int progress = Integer.parseInt((String) paragraphs.get(0).get("progress"));
@@ -458,6 +493,7 @@ public class ZeppelinRestApiTest extends AbstractTestRestApi {
     LOG.info("testRunParagraphWithParams");
     // Create note to run test.
     Note note = ZeppelinServer.notebook.createNote(null);
+    setupNoteForQubole(note);
     assertNotNull("can't create new note", note);
     note.setName("note for run test");
     Paragraph paragraph = note.addParagraph();
@@ -502,6 +538,7 @@ public class ZeppelinRestApiTest extends AbstractTestRestApi {
   public void testCronJobs() throws InterruptedException, IOException{
     // create a note and a paragraph
     Note note = ZeppelinServer.notebook.createNote(null);
+    setupNoteForQubole(note);
 
     note.setName("note for run test");
     Paragraph paragraph = note.addParagraph();
@@ -524,11 +561,15 @@ public class ZeppelinRestApiTest extends AbstractTestRestApi {
     
     String jsonRequest = "{\"cron\":\"* * * * * ?\" }";
     // right cron expression but not exist note.
+    //Denied by qubole
+    /*
     PostMethod postCron = httpPost("/notebook/cron/notexistnote", jsonRequest);
     assertThat("", postCron, isNotFound());
     postCron.releaseConnection();
+    */
     
     // right cron expression.
+    PostMethod postCron = null;
     postCron = httpPost("/notebook/cron/" + note.getId(), jsonRequest);
     assertThat("", postCron, isAllowed());
     postCron.releaseConnection();
@@ -551,6 +592,7 @@ public class ZeppelinRestApiTest extends AbstractTestRestApi {
   @Test
   public void testRegressionZEPPELIN_527() throws IOException {
     Note note = ZeppelinServer.notebook.createNote(null);
+    setupNoteForQubole(note);
 
     note.setName("note for run test");
     Paragraph paragraph = note.addParagraph();
@@ -562,7 +604,8 @@ public class ZeppelinRestApiTest extends AbstractTestRestApi {
     assertThat("test notebook jobs run:", getNoteJobs, isAllowed());
     Map<String, Object> resp = gson.fromJson(getNoteJobs.getResponseBodyAsString(), new TypeToken<Map<String, Object>>() {
     }.getType());
-    List<Map<String, String>> body = (List<Map<String, String>>) resp.get("body");
+    Map<String, List<Map<String, Object>>> quboleResult = (Map<String, List<Map<String, Object>>>) resp.get("body");
+    List<Map<String, Object>> body = (List<Map<String, Object>>) quboleResult.get("paraInfoMap");
     assertFalse(body.get(0).containsKey("started"));
     assertFalse(body.get(0).containsKey("finished"));
     getNoteJobs.releaseConnection();
@@ -573,6 +616,7 @@ public class ZeppelinRestApiTest extends AbstractTestRestApi {
   @Test
   public void testInsertParagraph() throws IOException {
     Note note = ZeppelinServer.notebook.createNote(null);
+    setupNoteForQubole(note);
 
     String jsonRequest = "{\"title\": \"title1\", \"text\": \"text1\"}";
     PostMethod post = httpPost("/notebook/" + note.getId() + "/paragraph", jsonRequest);
@@ -613,6 +657,7 @@ public class ZeppelinRestApiTest extends AbstractTestRestApi {
   @Test
   public void testGetParagraph() throws IOException {
     Note note = ZeppelinServer.notebook.createNote(null);
+    setupNoteForQubole(note);
 
     Paragraph p = note.addParagraph();
     p.setTitle("hello");
@@ -642,6 +687,7 @@ public class ZeppelinRestApiTest extends AbstractTestRestApi {
   @Test
   public void testMoveParagraph() throws IOException {
     Note note = ZeppelinServer.notebook.createNote(null);
+    setupNoteForQubole(note);
 
     Paragraph p = note.addParagraph();
     p.setTitle("title1");
@@ -674,6 +720,7 @@ public class ZeppelinRestApiTest extends AbstractTestRestApi {
   @Test
   public void testDeleteParagraph() throws IOException {
     Note note = ZeppelinServer.notebook.createNote(null);
+    setupNoteForQubole(note);
 
     Paragraph p = note.addParagraph();
     p.setTitle("title1");
@@ -692,6 +739,8 @@ public class ZeppelinRestApiTest extends AbstractTestRestApi {
     ZeppelinServer.notebook.removeNote(note.getId(), null);
   }
 
+  // Denied by qubole
+  /*
   @Test
   public void testSearch() throws IOException {
     Map<String, String> body;
@@ -781,6 +830,25 @@ public class ZeppelinRestApiTest extends AbstractTestRestApi {
     searchNotebook.releaseConnection();
     ZeppelinServer.notebook.removeNote(note.getId(), null);
   }
+  */
+  
+  
+  public static final String qbolUserId = "5";
+  public static final String email = "admin@qubole.com";
+  public static final Integer quboleNoteId = 102;
+  public static final String location = "location";
 
+  public static void setupNoteForQubole(Note note) {
+    PowerMockito.mockStatic(QuboleUtil.class);
+    String res = "[{\"qbolUserId\":\"" + qbolUserId + "\",\"zeppelinId\":\""
+        + note.getId() + "\",\"permissions\":{\"read\":true, \"update\": true, \"delete\": true, \"create\": true}}]";
+    try {
+      when(QuboleUtil.getResponseFromConnection(any(HttpURLConnection.class))).thenReturn(res);
+    } catch (Exception e) {
+    }
+    QuboleNoteAttributes attrs = new QuboleNoteAttributes(
+        qbolUserId, email, quboleNoteId, location);
+    note.setQuboleNoteAttributes(attrs);
+  }
 }
 

@@ -33,13 +33,23 @@ import org.apache.zeppelin.notebook.Paragraph;
 import org.apache.zeppelin.notebook.socket.Message;
 import org.apache.zeppelin.notebook.socket.Message.OP;
 import org.apache.zeppelin.rest.AbstractTestRestApi;
+import org.apache.zeppelin.rest.ZeppelinRestApiTest;
 import org.apache.zeppelin.server.ZeppelinServer;
+import org.apache.zeppelin.util.QuboleUtil;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.MethodSorters;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashSet;
@@ -47,12 +57,17 @@ import java.util.List;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
 
 /**
  * BASIC Zeppelin rest api tests
  */
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@PrepareForTest(QuboleUtil.class)
+@RunWith(PowerMockRunner.class)
+@PowerMockIgnore("javax.management.*")
 public class NotebookServerTest extends AbstractTestRestApi {
   private static Notebook notebook;
   private static NotebookServer notebookServer;
@@ -60,6 +75,7 @@ public class NotebookServerTest extends AbstractTestRestApi {
 
   @BeforeClass
   public static void init() throws Exception {
+    PowerMockito.mockStatic(QuboleUtil.class);
     AbstractTestRestApi.startUp();
     gson = new Gson();
     notebook = ZeppelinServer.notebook;
@@ -90,6 +106,7 @@ public class NotebookServerTest extends AbstractTestRestApi {
   public void testMakeSureNoAngularObjectBroadcastToWebsocketWhoFireTheEvent() throws IOException {
     // create a notebook
     Note note1 = notebook.createNote(null);
+    ZeppelinRestApiTest.setupNoteForQubole(note1);
 
     // get reference to interpreterGroup
     InterpreterGroup interpreterGroup = null;
@@ -120,8 +137,12 @@ public class NotebookServerTest extends AbstractTestRestApi {
     notebookServer.onOpen(sock2);
     verify(sock1, times(0)).send(anyString()); // getNote, getAngularObject
     // open the same notebook from sockets
-    notebookServer.onMessage(sock1, gson.toJson(new Message(OP.GET_NOTE).put("id", note1.getId())));
-    notebookServer.onMessage(sock2, gson.toJson(new Message(OP.GET_NOTE).put("id", note1.getId())));
+    Message msg = new Message(OP.GET_NOTE);
+    msg.put("id", note1.getId());
+    msg.put("fetch", false);
+    when(QuboleUtil.downloadNoteIfNull(notebook, note1, note1.getId())).thenReturn(note1);
+    notebookServer.onMessage(sock1, gson.toJson(msg));
+    notebookServer.onMessage(sock2, gson.toJson(msg));
 
     reset(sock1);
     reset(sock2);
@@ -355,12 +376,15 @@ public class NotebookServerTest extends AbstractTestRestApi {
 
   private NotebookSocket createWebSocket() {
     NotebookSocket sock = mock(NotebookSocket.class);
-    when(sock.getRequest()).thenReturn(createHttpServletRequest());
+    HttpServletRequest req = createHttpServletRequest();
+    when(sock.getRequest()).thenReturn(req);
     return sock;
   }
 
   private HttpServletRequest createHttpServletRequest() {
-    return mock(HttpServletRequest.class);
+    HttpServletRequest req = mock(HttpServletRequest.class);
+    when(req.getHeader(QuboleServerHelper.QBOL_USER_ID)).thenReturn(ZeppelinRestApiTest.qbolUserId);
+    return req;
   }
 }
 

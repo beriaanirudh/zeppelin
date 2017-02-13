@@ -116,7 +116,17 @@ public class SparkInterpreterTest {
         new AngularObjectRegistry(intpGroup.getId(), null),
         null,
         new LinkedList<InterpreterContextRunner>(),
-        new InterpreterOutput(null)) {
+        new InterpreterOutput(new InterpreterOutputListener() {
+          @Override
+          public void onAppend(InterpreterOutput out, byte[] line) {
+
+          }
+
+          @Override
+          public void onUpdate(InterpreterOutput out, byte[] output) {
+
+          }
+        })) {
       @Override
       public RemoteEventClientWrapper getClient() {
         return remoteEventClientWrapper;

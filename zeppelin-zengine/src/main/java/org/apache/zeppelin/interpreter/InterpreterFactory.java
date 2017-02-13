@@ -35,6 +35,7 @@ import org.apache.zeppelin.interpreter.remote.RemoteAngularObjectRegistry;
 import org.apache.zeppelin.interpreter.remote.RemoteInterpreter;
 import org.apache.zeppelin.interpreter.remote.RemoteInterpreterProcessListener;
 import org.apache.zeppelin.notebook.NoteInterpreterLoader;
+import org.apache.zeppelin.notebook.Notebook.CronJob;
 import org.apache.zeppelin.scheduler.Job;
 import org.apache.zeppelin.scheduler.Job.Status;
 import org.apache.zeppelin.util.QuboleUtil;
@@ -306,6 +307,10 @@ public class InterpreterFactory implements InterpreterGroupFactory {
     String json = sb.toString();
     InterpreterInfoSaving info = gson.fromJson(json, InterpreterInfoSaving.class);
 
+    if (info == null) {
+      return;
+    }
+
     for (String k : info.interpreterSettings.keySet()) {
       InterpreterSetting setting = info.interpreterSettings.get(k);
 
@@ -535,7 +540,9 @@ public class InterpreterFactory implements InterpreterGroupFactory {
       interpreterSettings.put(intpSetting.id(), intpSetting);
       saveToFile();
       // Sync interpreter settings to Object Store
-      QuboleUtil.putInterpretersToObjectStore();
+      if (CronJob.notebook != null) {
+        QuboleUtil.putInterpretersToObjectStore();
+      }
       return intpSetting;
     }
   }

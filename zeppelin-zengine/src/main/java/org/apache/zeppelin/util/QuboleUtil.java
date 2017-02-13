@@ -539,7 +539,7 @@ public class QuboleUtil {
       Map.Entry<String, Object> entry = iter.next();
       Map<String, Object> interpreterSetting = (Map<String, Object>) entry.getValue();
       Map<String, Object> properties = (Map<String, Object>) interpreterSetting.get(PROPERTIES);
-      if (JOBSERVER.equals(properties.get(SOURCE))) {
+      if (properties != null && JOBSERVER.equals(properties.get(SOURCE))) {
         iter.remove();
       }
     }

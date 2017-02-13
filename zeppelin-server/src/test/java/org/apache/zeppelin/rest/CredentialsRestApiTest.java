@@ -44,6 +44,8 @@ public class CredentialsRestApiTest extends AbstractTestRestApi {
     AbstractTestRestApi.shutDown();
   }
 
+  //Declined by Qubole
+  /*
   @Test
   public void testInvalidRequest() throws IOException {
     String jsonInvalidRequestEntityNull = "{\"entity\" : null, \"username\" : \"test\", \"password\" : \"testpass\"}";
@@ -71,6 +73,7 @@ public class CredentialsRestApiTest extends AbstractTestRestApi {
     assertThat(allNullPut, isBadRequest());
     allNullPut.releaseConnection();
   }
+  */
 
 }
 

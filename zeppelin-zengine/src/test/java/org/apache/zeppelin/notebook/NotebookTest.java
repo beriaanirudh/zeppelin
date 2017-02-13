@@ -533,12 +533,16 @@ public class NotebookTest implements JobListenerFactory{
     Note note = notebook.createNote(null);
     NotebookAuthorization notebookAuthorization = notebook.getNotebookAuthorization();
     // empty owners, readers and writers means note is public
-    assertEquals(notebookAuthorization.isOwner(note.id(),
-            new HashSet<String>(Arrays.asList("user2"))), true);
-    assertEquals(notebookAuthorization.isReader(note.id(),
-            new HashSet<String>(Arrays.asList("user2"))), true);
-    assertEquals(notebookAuthorization.isWriter(note.id(),
-            new HashSet<String>(Arrays.asList("user2"))), true);
+    /* This is not true for qubole. Empty means no-one has permissions 
+     * since in the beginning all permissions are empty
+     * and they are populated from tapp as required
+     */
+//    assertEquals(notebookAuthorization.isOwner(note.id(),
+//            new HashSet<String>(Arrays.asList("user2"))), true);
+//    assertEquals(notebookAuthorization.isReader(note.id(),
+//            new HashSet<String>(Arrays.asList("user2"))), true);
+//    assertEquals(notebookAuthorization.isWriter(note.id(),
+//            new HashSet<String>(Arrays.asList("user2"))), true);
 
     notebookAuthorization.setOwners(note.id(),
             new HashSet<String>(Arrays.asList("user1")));
@@ -563,11 +567,12 @@ public class NotebookTest implements JobListenerFactory{
             new HashSet<String>(Arrays.asList("user1"))), true);
 
     // Test clearing of permssions
+    // Not applicable to Qubole. Reason above.
     notebookAuthorization.setReaders(note.id(), Sets.<String>newHashSet());
-    assertEquals(notebookAuthorization.isReader(note.id(),
-            new HashSet<String>(Arrays.asList("user2"))), true);
-    assertEquals(notebookAuthorization.isReader(note.id(),
-            new HashSet<String>(Arrays.asList("user3"))), true);
+//    assertEquals(notebookAuthorization.isReader(note.id(),
+//            new HashSet<String>(Arrays.asList("user2"))), true);
+//    assertEquals(notebookAuthorization.isReader(note.id(),
+//            new HashSet<String>(Arrays.asList("user3"))), true);
 
     notebook.removeNote(note.id(), null);
   }
