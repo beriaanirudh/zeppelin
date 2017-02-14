@@ -1422,9 +1422,9 @@ public class NotebookServer extends WebSocketServlet implements
             clonedNote.removeParagraph(id);
           }
         }
-        conn.send(serializeMessage(
-            new Message(OP.NOTE).put("note", clonedNote)));
       }
+      conn.send(serializeMessage(
+          new Message(OP.NOTE).put("note", clonedNote)));
       sendAllAngularObjects(note, conn);
     }
   }
