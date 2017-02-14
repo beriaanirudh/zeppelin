@@ -167,6 +167,7 @@ function initqubole() {
     export FIRST_CLASS_NOTEBOOK_LOC=`nodeinfo s3_first_class_notebook_location`
   fi
 
+  export INTERPRETER_CONF_LOC=`nodeinfo s3_notebook_conf_backup_location`
   export QUBOLE_API_TOKEN=`nodeinfo qubole_cluster_api_token`
   export QUBOLE_BASE_URL=`nodeinfo qubole_base_url`
   export CLUSTER_ID=`nodeinfo cluster_id`
