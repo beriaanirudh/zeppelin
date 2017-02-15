@@ -148,7 +148,7 @@ public class QuboleServerHelper {
         + noteId + "/note.json";
 
     try {
-      PrintWriter writer = new PrintWriter("../" + fileName);
+      PrintWriter writer = new PrintWriter(fileName);
       writer.print(gson.toJson(noteMap));
       writer.close();
     } catch (FileNotFoundException e) {
