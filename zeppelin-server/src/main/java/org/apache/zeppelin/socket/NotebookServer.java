@@ -181,7 +181,8 @@ public class NotebookServer extends WebSocketServlet implements
       AuthenticationInfo subject = new AuthenticationInfo(messagereceived.principal);
       userAndRoles.add(QuboleServerHelper.getUserForConn(conn));
 
-      if (opsNotAllowedInACL.contains(messagereceived.op)) {
+      if (!NotebookAuthorization.DISABLE_ACL
+          && opsNotAllowedInACL.contains(messagereceived.op)) {
         conn.send(serializeMessage(new Message(OP.AUTH_INFO).put("info",
             "Cannot create/delete/import/clone notebooks from Spark-Notebook UI "
             + "in order to enforce Authorization. Please use notebooks.")));

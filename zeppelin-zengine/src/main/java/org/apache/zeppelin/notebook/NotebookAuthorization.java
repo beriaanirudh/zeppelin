@@ -31,6 +31,7 @@ import java.util.*;
  */
 public class NotebookAuthorization {
   private static final Logger LOG = LoggerFactory.getLogger(NotebookAuthorization.class);
+  public static final Boolean DISABLE_ACL = "true".equals(System.getenv("DISABLE_ACL"));
 
   /*
    * { "note1": { "owners": ["u1"], "readers": ["u1", "u2"], "writers": ["u1"] },  "note2": ... } }
@@ -242,6 +243,9 @@ public class NotebookAuthorization {
 
   // return true only if (a intersection b) is non-empty
   private boolean isMember(Set<String> a, Set<String> b) {
+    if (DISABLE_ACL) {
+      return true;
+    }
     Set<String> intersection = new HashSet<String>(b);
     intersection.retainAll(a);
     return (intersection.size() > 0);
