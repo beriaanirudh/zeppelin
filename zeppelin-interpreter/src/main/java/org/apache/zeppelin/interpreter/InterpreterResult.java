@@ -18,7 +18,7 @@
 package org.apache.zeppelin.interpreter;
 
 import java.io.Serializable;
-import org.apache.commons.lang3.StringUtils;
+//import org.apache.commons.lang3.StringUtils;
 import java.util.*;
 
 /**
@@ -114,7 +114,11 @@ public class InterpreterResult implements Serializable {
       return 0;
     }
     String typeString = "%" + t.name().toLowerCase();
-    return StringUtils.indexOf(msg, typeString );
+    //return StringUtils.indexOf(msg, typeString );
+    if (msg == null) {
+      return -1;
+    }
+    return msg.indexOf(typeString);
   }
 
   private TreeMap<Integer, Type> buildIndexMap(String msg) {
