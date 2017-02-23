@@ -41,6 +41,7 @@ angular.module('zeppelinWebApp').controller('NotebookCtrl',
   $scope.isNoteDirty = null;
   $scope.saveTimer = null;
   $scope.parasfetched = false;
+  $scope.connected = websocketMsgSrv.isConnected();
 
   var connectedOnce = false;
 
@@ -60,6 +61,7 @@ angular.module('zeppelinWebApp').controller('NotebookCtrl',
     if(connectedOnce && param){
       initNotebook();
     }
+    $scope.connected = param;
     connectedOnce = true;
   });
 

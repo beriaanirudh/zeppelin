@@ -167,7 +167,7 @@ limitations under the License.
         <i class="fa fa-spinner fa-spin"></i>
          Loading... 
       </span>
-      <span>
+      <span class="setting-btn">
           <a href="#/interpreter">
             Interpreters
           </a>
@@ -185,6 +185,14 @@ limitations under the License.
             tooltip-placement="bottom" tooltip="Interpreter binding">
         <i class="fa fa-cog" ng-style="{color: showSetting ? '#3071A9' : 'black' }"></i>
       </span>
+
+      <span class="setting-btn">
+            <i ng-if="connected" class="fa fa-circle server-connected"
+               tooltip="WebSocket Connected" tooltip-placement="bottom"></i>
+            <i ng-if="!connected" class="fa fa-circle server-disconnected"
+               tooltip="WebSocket Disconnected" tooltip-placement="bottom"></i>
+      </span>
+
       <!--span class="setting-btn"
             type="button"
             ng-click="togglePermissions()"
