@@ -15,61 +15,6 @@
 
 var zeppelin = zeppelin || {};
 
-/**
- * HandsonHelper class
- */
-zeppelin.HandsonHelper = function(columns, rows, comment) {
-  this.columns = columns || [];
-  this.rows = rows || [];
-  this.comment = comment || '';
-};
-
-zeppelin.HandsonHelper.prototype.getHandsonTableConfig = function(columns, columnNames, resultRows) {
-  return {
-    colHeaders: columnNames,
-    data: resultRows,
-    rowHeaders: false,
-    stretchH: 'all',
-    sortIndicator: true,
-    columns: columns,
-    columnSorting: true,
-    contextMenu: false,
-    manualColumnResize: true,
-    manualRowResize: true,
-    readOnly: true,
-    readOnlyCellClassName: '',
-    fillHandle: false,
-    fragmentSelection: true,
-    disableVisualSelection: true,
-    cells: function(ro, co, pro) {
-      var cellProperties = {};
-      var colType = columns[co].type;
-      cellProperties.renderer = function(instance, td, row, col, prop, value, cellProperties) {
-        _cellRenderer(instance, td, row, col, prop, value, cellProperties, colType);
-      };
-      return cellProperties;
-    },
-    afterGetColHeader: function(col, TH) {
-      var instance = this;
-      var menu = _buildDropDownMenu(columns[col].type);
-      var button = _buildTypeSwitchButton();
-
-      _addButtonMenuEvent(button, menu);
-
-      Handsontable.Dom.addEvent(menu, 'click', function(event) {
-        if (event.target.nodeName === 'LI') {
-          _setColumnType(columns, event.target.data.colType, instance, col);
-        }
-      });
-      if (TH.firstChild.lastChild.nodeName === 'BUTTON') {
-        TH.firstChild.removeChild(TH.firstChild.lastChild);
-      }
-      TH.firstChild.appendChild(button);
-      TH.style['white-space'] = 'normal';
-    }
-  };
-};
-
 /*
 ** Private Service Functions
 */
@@ -156,11 +101,11 @@ function _cellRenderer(instance, td, row, col, prop, value, cellProperties, colT
   if (colType === 'numeric' && _isNumeric(value)) {
     cellProperties.format = '0,0.[00000]';
     td.style.textAlign = 'left';
-    Handsontable.renderers.NumericRenderer.apply(this, arguments);
+    Handsontable.renderers.NumericRenderer.apply(this, arguments); // jshint ignore:line
   } else if (value.length > '%html'.length && '%html ' === value.substring(0, '%html '.length)) {
     td.innerHTML = value.substring('%html'.length);
   } else {
-    Handsontable.renderers.TextRenderer.apply(this, arguments);
+    Handsontable.renderers.TextRenderer.apply(this, arguments); // jshint ignore:line
   }
 }
 
@@ -171,16 +116,6 @@ function _dateValidator(value, callback) {
 
 function _numericValidator(value, callback) {
   return callback(_isNumeric(value));
-}
-
-function _setColumnType(columns, type, instance, col) {
-  columns[col].type = type;
-  _setColumnValidator(columns, col);
-  instance.updateSettings({columns: columns});
-  instance.validateCells(null);
-  if (_isColumnSorted(instance, col)) {
-    instance.sort(col, instance.sortOrder);
-  }
 }
 
 function _isColumnSorted(instance, col) {
@@ -196,4 +131,70 @@ function _setColumnValidator(columns, col) {
     columns[col].validator = null;
   }
 }
+
+function _setColumnType(columns, type, instance, col) {
+  columns[col].type = type;
+  _setColumnValidator(columns, col);
+  instance.updateSettings({columns: columns});
+  instance.validateCells(null);
+  if (_isColumnSorted(instance, col)) {
+    instance.sort(col, instance.sortOrder);
+  }
+}
+
+/**
+ * HandsonHelper class
+ */
+zeppelin.HandsonHelper = function(columns, rows, comment) {
+  this.columns = columns || [];
+  this.rows = rows || [];
+  this.comment = comment || '';
+};
+
+zeppelin.HandsonHelper.prototype.getHandsonTableConfig = function(columns, columnNames, resultRows) {
+  return {
+    colHeaders: columnNames,
+    data: resultRows,
+    rowHeaders: false,
+    stretchH: 'all',
+    sortIndicator: true,
+    columns: columns,
+    columnSorting: true,
+    contextMenu: false,
+    manualColumnResize: true,
+    manualRowResize: true,
+    readOnly: true,
+    readOnlyCellClassName: '',
+    fillHandle: false,
+    fragmentSelection: true,
+    disableVisualSelection: true,
+    cells: function(ro, co, pro) {
+      var cellProperties = {};
+      var colType = columns[co].type;
+      cellProperties.renderer = function(instance, td, row, col, prop, value, cellProperties) {
+        _cellRenderer(instance, td, row, col, prop, value, cellProperties, colType);
+      };
+      return cellProperties;
+    },
+    afterGetColHeader: function(col, TH) {
+      var instance = this;
+      var menu = _buildDropDownMenu(columns[col].type);
+      var button = _buildTypeSwitchButton();
+
+      _addButtonMenuEvent(button, menu);
+
+      Handsontable.Dom.addEvent(menu, 'click', function(event) {
+        if (event.target.nodeName === 'LI') {
+          _setColumnType(columns, event.target.data.colType, instance, col);
+        }
+      });
+      if (TH.firstChild.lastChild.nodeName === 'BUTTON') {
+        TH.firstChild.removeChild(TH.firstChild.lastChild);
+      }
+      TH.firstChild.appendChild(button);
+      TH.style['white-space'] = 'normal';
+    }
+  };
+};
+
 

@@ -14,6 +14,9 @@
 
 'use strict';
 
+var zeppelin = zeppelin || {};
+
+
 /**
  * Visualize data in table format
  */
@@ -23,7 +26,7 @@ zeppelin.TableVisualization = function(targetEl) {
   targetEl.addClass('table');
 };
 
-zeppelin.TableVisualization.prototype = Object.create(zeppelin.Visualization.prototype);
+// zeppelin.TableVisualization.prototype = Object.create(zeppelin.Visualization.prototype);
 
 zeppelin.TableVisualization.prototype.refresh = function() {
   this.hot.render();
@@ -40,7 +43,7 @@ zeppelin.TableVisualization.prototype.render = function(tableData) {
   }
 
   if (!this.columns) {
-    this.columns = Array.apply(null, Array(tableData.columns.length)).map(function() {
+    this.columns = Array.apply(null, new Array(tableData.columns.length)).map(function() {
       return {type: 'text'};
     });
   }
