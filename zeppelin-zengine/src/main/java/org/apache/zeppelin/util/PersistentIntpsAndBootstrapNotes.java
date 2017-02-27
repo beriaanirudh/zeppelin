@@ -66,8 +66,8 @@ public class PersistentIntpsAndBootstrapNotes implements Runnable {
 
   public static void checkPersistence(InterpreterSetting setting,
       InterpreterFactory intpFactory, List<Note> notes) {
-    String persistent = setting.getProperties().getProperty(PERSISTENT_PROPERTY);
-    if (persistent != null && "true".equalsIgnoreCase(persistent)) {
+    Boolean persistent = isSettingPersistent(setting);
+    if (persistent) {
       /* Exception in one interpreter/bootstrap notebook should not 
        * stop other interpreters.
        */
@@ -130,7 +130,7 @@ public class PersistentIntpsAndBootstrapNotes implements Runnable {
        * have any paragraph to be run with this interpreter,
        * we need to start it pro-actively.
        */
-      if (!ranParaForIntp) {
+      if (isSettingPersistent(setting) && !ranParaForIntp) {
         intpFactory.restart(setting.id());
         intpFactory.createInterpretersForNote(setting, NoteInterpreterLoader.SHARED_SESSION, NoteInterpreterLoader.SHARED_SESSION);
         InterpreterGroup group = setting.getInterpreterGroup(null);
@@ -188,6 +188,14 @@ public class PersistentIntpsAndBootstrapNotes implements Runnable {
       }
     }
     return true;
+  }
+
+  private static boolean isSettingPersistent(InterpreterSetting setting) {
+    String persistent = setting.getProperties().getProperty(PERSISTENT_PROPERTY);
+    if (Boolean.parseBoolean(persistent)) {
+      return true;
+    }
+    return false;
   }
 
   public static String getPeristentPropertyForUnitTest() {
