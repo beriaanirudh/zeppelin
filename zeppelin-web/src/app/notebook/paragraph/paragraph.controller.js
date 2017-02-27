@@ -1014,6 +1014,13 @@ angular.module('zeppelinWebApp')
   };
 
   $scope.getExecutionTime = function() {
+    var getLocalTime = function(gmtdate){
+      if(gmtdate){
+        var tempDate = gmtdate + ' GMT';
+        var newDate = new Date(tempDate);
+        return newDate.toString();
+      }
+    };
     var pdata = $scope.paragraph;
     var timeMs = Date.parse(pdata.dateFinished) - Date.parse(pdata.dateStarted);
     if (isNaN(timeMs) || timeMs < 0) {
@@ -1023,10 +1030,11 @@ angular.module('zeppelinWebApp')
       return '';
     }
     var user = (pdata.user === undefined || pdata.user === null) ? 'anonymous' : pdata.user;
-    var desc = 'Took ' + moment.duration((timeMs / 1000), 'seconds').format('h [hrs] m [min] s [sec]') +
-      '. Last updated by ' + user + ' at ' + moment(pdata.dateUpdated).format('MMMM DD YYYY, h:mm:ss A') + '.';
 
-    desc += ' . Last run at ' + moment(pdata.dateStarted).format('MMMM DD YYYY, h:mm:ss A') + '.';
+    var desc = 'Took ' + moment.duration((timeMs / 1000), 'seconds').format('h [hrs] m [min] s [sec]') +
+      '. Last updated by ' + user + ' at ' + getLocalTime(pdata.dateUpdated) + '.';
+
+    desc += ' Last run at ' + getLocalTime(pdata.dateStarted) + '.';
 
     if ($scope.isResultOutdated()) {
       desc += ' (outdated)';
