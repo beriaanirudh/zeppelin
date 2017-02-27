@@ -85,7 +85,7 @@ if [[ ${INTERPRETER_ID} == "spark" ]]; then
   export CONF_JAVA_OPTS="-Dspark.executor.extraJavaOptions=-Dlog4j.configuration=file:/usr/lib/spark/conf/log4j.properties -Dspark.yarn.am.extraJavaOptions=-Dlog4j.configuration=file:/usr/lib/spark/conf/log4j.properties"
   readSparkConf /usr/lib/spark/conf/spark-defaults.conf
   JAVA_INTP_OPTS+=" ${CONF_JAVA_OPTS}"
-  if [[ -n "${SPARK_SUBMIT}" ]]; then
+  if [[ -n "${SPARK_HOME}" ]]; then
     JAVA_INTP_OPTS+=" -XX:OnOutOfMemoryError='kill -9 %p'"
   fi
 fi
