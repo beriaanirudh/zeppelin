@@ -252,4 +252,8 @@ public class RemoteInterpreterEventClient implements ResourcePoolConnector {
         gson.toJson(infos)));
   }
 
+  public void onInterpreterShutdown() {
+    sendEvent(new RemoteInterpreterEvent(
+        RemoteInterpreterEventType.SHUTDOWN_INTERPRETER, null));
+  }
 }

@@ -108,6 +108,10 @@ public class SparkInterpreterTest {
       @Override
       public void onMetaInfosReceived(Map<String, String> infos) {
       }
+
+      @Override
+      public void onInterpreterShutdown() {
+      }
     };
     context = new InterpreterContext("note", "id", "title", "text",
         new AuthenticationInfo(),
@@ -201,7 +205,7 @@ public class SparkInterpreterTest {
   @Test
   public void testListener() {
     SparkContext sc = repl.getSparkContext();
-    assertNotNull(SparkInterpreter.setupListeners(sc));
+    assertNotNull(SparkInterpreter.setupListeners(sc, null));
   }
 
   @Test

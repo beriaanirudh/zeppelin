@@ -49,7 +49,8 @@ enum RemoteInterpreterEventType {
   OUTPUT_APPEND = 8,
   OUTPUT_UPDATE = 9,
   ANGULAR_REGISTRY_PUSH=10,
-  PARA_INFOS = 16
+  PARA_INFOS = 16,
+  SHUTDOWN_INTERPRETER = 17
 }
 
 struct RemoteInterpreterEvent {

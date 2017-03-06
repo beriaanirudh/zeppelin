@@ -143,7 +143,7 @@ public class SparkInterpreter extends Interpreter {
     this.sc = sc;
     env = SparkEnv.get();
     sstate = SessionState.get();
-    sparkListener = setupListeners(this.sc);
+    sparkListener = setupListeners(this.sc, getScheduler());
   }
 
   public SparkContext getSparkContext() {
@@ -152,7 +152,7 @@ public class SparkInterpreter extends Interpreter {
         sc = createSparkContext();
         env = SparkEnv.get();
         sstate = SessionState.get();
-        sparkListener = setupListeners(sc);
+        sparkListener = setupListeners(sc, getScheduler());
       }
       return sc;
     }
@@ -164,7 +164,7 @@ public class SparkInterpreter extends Interpreter {
     }
   }
 
-  static JobProgressListener setupListeners(SparkContext context) {
+  static JobProgressListener setupListeners(SparkContext context, final Scheduler scheduler) {
     JobProgressListener pl = new JobProgressListener(context.getConf()) {
       @Override
       public synchronized void onJobStart(SparkListenerJobStart jobStart) {
@@ -194,6 +194,24 @@ public class SparkInterpreter extends Interpreter {
         return jobUrl;
       }
 
+      @Override
+      public void onApplicationEnd(SparkListenerApplicationEnd appEnded) {
+        super.onApplicationEnd(appEnded);
+        new Thread(new Runnable() {
+          @Override
+          public void run() {
+            while (!scheduler.getJobsRunning().isEmpty()) {
+              try {
+                Thread.sleep(100);
+              } catch (InterruptedException e) {
+                e.printStackTrace();
+              }
+            }
+            RemoteEventClientWrapper eventClient = ZeppelinContext.getEventClient();
+            eventClient.onInterpreterShutdown();
+          }
+        }).start();
+      }
     };
     try {
       Object listenerBus = context.getClass().getMethod("listenerBus").invoke(context);

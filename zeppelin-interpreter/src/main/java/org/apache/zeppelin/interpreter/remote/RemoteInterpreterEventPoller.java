@@ -179,6 +179,10 @@ public class RemoteInterpreterEventPoller extends Thread {
           if (noteId != null && paraId != null && settingId != null) {
             listener.onParaInfosReceived(noteId, paraId, settingId, paraInfos);
           }
+        } else if (event.getType() == RemoteInterpreterEventType.SHUTDOWN_INTERPRETER){
+          String settingId = RemoteInterpreterUtils.
+              getInterpreterSettingId(interpreterGroup.getId());
+          listener.onInterpreterShutdown(settingId);
         }
         logger.debug("Event from remoteproceess {}", event.getType());
       } catch (Exception e) {

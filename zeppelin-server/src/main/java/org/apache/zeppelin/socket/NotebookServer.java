@@ -36,6 +36,7 @@ import org.apache.zeppelin.conf.ZeppelinConfiguration.ConfVars;
 import org.apache.zeppelin.display.AngularObject;
 import org.apache.zeppelin.display.AngularObjectRegistry;
 import org.apache.zeppelin.display.AngularObjectRegistryListener;
+import org.apache.zeppelin.interpreter.InterpreterFactory;
 import org.apache.zeppelin.interpreter.InterpreterGroup;
 import org.apache.zeppelin.interpreter.remote.RemoteAngularObjectRegistry;
 import org.apache.zeppelin.interpreter.thrift.InterpreterCompletion;
@@ -1476,6 +1477,14 @@ public class NotebookServer extends WebSocketServlet implements
       }
     }
     setting.clearNoteIdAndParaMap();
+  }
+
+  @Override
+  public void onInterpreterShutdown(String settingId) {
+    InterpreterFactory interpreterFactory = notebook().getInterpreterFactory();
+    InterpreterSetting intpSetting = interpreterFactory.get(settingId);
+    interpreterFactory.restart(settingId);
+    clearParagraphRuntimeInfo(intpSetting);
   }
 }
 
