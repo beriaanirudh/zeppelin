@@ -450,11 +450,19 @@ public class Note implements Serializable, JobListener {
    *
    * @param paragraphId
    */
-  public void run(String paragraphId) {
+  public void run(String paragraphId, String userId, String email, boolean bootStrapRun) {
     Paragraph p = getParagraph(paragraphId);
     p.setNoteReplLoader(replLoader);
     p.setListener(jobListenerFactory.getParagraphJobListener(this));
     p.clearRuntimeInfo(null);
+
+    if (!bootStrapRun) {
+      InterpreterSetting setting = getSettingFromInterpreter(
+          replLoader.get(p.getRequiredReplName()));
+      InterpreterFactory intpFactory = CronJob.notebook.getInterpreterFactory();
+      PersistentIntpsAndBootstrapNotes.runBootStrapAndStartIntp(setting, userId, email,
+          intpFactory, CronJob.notebook.getAllNotes());
+    }
     String requiredReplName = p.getRequiredReplName();
     Interpreter intp = replLoader.get(requiredReplName);
     if (intp == null) {
@@ -510,13 +518,12 @@ public class Note implements Serializable, JobListener {
 
   public boolean runParagraphsForBootstrap(InterpreterSetting setting,
       String userId, String email) {
-    setInterpreterBindingsForMode(email);
     boolean ranParaForInterpreter = false;
     synchronized (paragraphs) {
       for (Paragraph p: paragraphs) {
         InterpreterSetting paraIntpSetting = getSettingFromInterpreter(
             replLoader.get(p.getRequiredReplName()));
-        if (QuboleInterpreterUtils.sparkInterpreterGroupName.equals(
+        if (QuboleUtil.sparkInterpreterGroupName.equals(
             paraIntpSetting.getGroup())) {
           if (paraIntpSetting.equals(setting)) {
             ranParaForInterpreter = true;

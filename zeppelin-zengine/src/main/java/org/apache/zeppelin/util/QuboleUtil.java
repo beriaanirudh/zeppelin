@@ -90,6 +90,8 @@ public class QuboleUtil {
   public static final String hadoopcmd = "/usr/lib/hadoop2/bin/hadoop";
   public static final String JOBSERVER = "JobServer";
   public static final String SOURCE = "source";
+  public static final String sparkInterpreterGroupName = "spark";
+  public static final String SPARK_YARN_QUEUE = "spark.yarn.queue";
 
   /**
    * make opsapi call to qubole rails tier to convey creation of new note

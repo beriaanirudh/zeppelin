@@ -104,18 +104,6 @@
         "propertyName": "spark.master",
         "defaultValue": "local[*]",
         "description": "Spark master uri. ex) spark://masterhost:7077"
-      },
-      "zeppelin.interpreter.persistent": {
-        "envName": "ZEPPELIN_INTERPRETER_PERSISTENT",
-        "propertyName": "zeppelin.interpreter.persistent",
-        "defaultValue": "false",
-        "description": "Interpreter will always be up if true"
-      },
-      "zeppelin.interpreter.bootstrap.notebook": {
-        "envName": "ZEPPELIN_INTERPRETER_BOOTSTRAP_NOTEBOOK",
-        "propertyName": "zeppelin.interpreter.bootstrap.notebook",
-        "defaultValue": "null",
-        "description": "Will run the notebook (with this id) before anything using this interpreter is run"
       }
     }
   },

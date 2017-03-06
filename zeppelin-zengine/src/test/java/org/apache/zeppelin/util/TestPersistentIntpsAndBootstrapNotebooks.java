@@ -27,7 +27,6 @@ public class TestPersistentIntpsAndBootstrapNotebooks {
 
   @Before
   public void beforeTest() {
-    PersistentIntpsAndBootstrapNotes.changeAccountFeatureForUnitTest(true);
     Interpreter.registeredInterpreters = Collections
         .synchronizedMap(new HashMap<String, Interpreter.RegisteredInterpreter>());
     MockInterpreter1.register("mock1", "group1", "org.apache.zeppelin.interpreter.mock.MockInterpreter1");
@@ -91,11 +90,13 @@ public class TestPersistentIntpsAndBootstrapNotebooks {
     Interpreter intp = mock(Interpreter.class);
     when(intp.getProperty()).thenReturn(properties);
     InterpreterGroup intpGroup = new InterpreterGroup();
-    intpGroup.add(intp);
-    InterpreterSetting setting = new InterpreterSetting(
-        null, QuboleInterpreterUtils.sparkInterpreterGroupName, null, null, null);
-    setting.setInterpreterGroup(intpGroup);
-    return setting;
+    return null;
+//    intpGroup.put(key, new ArrayList<>())
+//    intpGroup.add(intp);
+//    InterpreterSetting setting = new InterpreterSetting(
+//        null, QuboleUtil.sparkInterpreterGroupName, null, null, null);
+//    setting.setInterpreterGroup(intpGroup);
+//    return setting;
 
   }
 

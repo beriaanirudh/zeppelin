@@ -542,7 +542,7 @@ public class RemoteInterpreter extends Interpreter {
     Client client = null;
     try {
       client = interpreterProcess.getClient();
-      client.open(className);
+      client.open(null, className);
     } catch (Exception e) {
       logger.error("Error while starting persistent interpreter:", e);
     }

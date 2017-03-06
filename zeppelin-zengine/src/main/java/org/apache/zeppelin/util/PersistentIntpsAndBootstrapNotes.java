@@ -11,6 +11,7 @@ import org.apache.zeppelin.interpreter.InterpreterFactory;
 import org.apache.zeppelin.interpreter.InterpreterGroup;
 import org.apache.zeppelin.interpreter.InterpreterSetting;
 import org.apache.zeppelin.interpreter.remote.RemoteInterpreterProcess;
+import org.apache.zeppelin.interpreter.thrift.RemoteInterpreterService.Client;
 import org.apache.zeppelin.notebook.Note;
 import org.apache.zeppelin.notebook.Notebook.CronJob;
 import org.slf4j.Logger;
@@ -25,8 +26,6 @@ public class PersistentIntpsAndBootstrapNotes implements Runnable {
   private static final Logger LOG = LoggerFactory.getLogger(PersistentIntpsAndBootstrapNotes.class);
   private static final String PERSISTENT_PROPERTY = "zeppelin.interpreter.persistent";
   private static final String PERSISTENT_NOTEBOOK = "zeppelin.interpreter.bootstrap.notebook";
-  private static boolean ACCOUNT_FEATURE = "true".equals(
-      System.getenv("ZEPPELIN_PERSISTENT_INTERPRETERS_AND_BOOTSTRAP_NOTEBOOKS"));
 
   private static final ScheduledExecutorService service =
       Executors.newSingleThreadScheduledExecutor();
@@ -53,9 +52,6 @@ public class PersistentIntpsAndBootstrapNotes implements Runnable {
   }
 
   public static void schedulePeristentInterpreters(InterpreterFactory factory) {
-    if (!ACCOUNT_FEATURE) {
-      return;
-    }
     PersistentIntpsAndBootstrapNotes persistentIntp = new PersistentIntpsAndBootstrapNotes(factory);
     LOG.info("Starting a scheduler to start persistent interpreters and "
         + "run bootstrap notebooks");
@@ -67,17 +63,14 @@ public class PersistentIntpsAndBootstrapNotes implements Runnable {
 
   public static void checkPersistence(InterpreterSetting setting,
       InterpreterFactory intpFactory, List<Note> notes) {
-    if (!ACCOUNT_FEATURE) {
-      return;
-    }
     String persistent = setting.getProperties().getProperty(PERSISTENT_PROPERTY);
     if (persistent != null && "true".equalsIgnoreCase(persistent)) {
       /* Exception in one interpreter/bootstrap notebook should not 
        * stop other interpreters.
        */
       try {
-        InterpreterGroup intpGroup = setting.getInterpreterGroup();
-        String email = intpGroup.getProperty(QuboleInterpreterUtils.SPARK_YARN_QUEUE);
+        InterpreterGroup intpGroup = setting.getInterpreterGroup(null);
+        String email = intpGroup.getProperty(QuboleUtil.SPARK_YARN_QUEUE);
         //find userId from email, else qubole events wont have email
         String userId = QuboleUtil.getUserForEmail(email);
         runBootStrapAndStartIntp(setting, userId, email, intpFactory, notes);
@@ -118,7 +111,7 @@ public class PersistentIntpsAndBootstrapNotes implements Runnable {
 
   public static void runBootStrapAndStartIntp(InterpreterSetting setting, String userId,
       String email, InterpreterFactory intpFactory, List<Note> notes) {
-    if (!ACCOUNT_FEATURE || !proceedWithBootStrap(setting)) {
+    if (!proceedWithBootStrap(setting)) {
       return;
     }
     if (!isInterpreterUp(setting)) {
@@ -136,11 +129,13 @@ public class PersistentIntpsAndBootstrapNotes implements Runnable {
        */
       if (!ranParaForIntp) {
         intpFactory.restart(setting.id());
-        InterpreterGroup group = setting.getInterpreterGroup();
+        InterpreterGroup group = setting.getInterpreterGroup(null);
         LOG.info("Starting interpreter = " + setting.getName() + " with id = " + setting.id()
             + " after boot strap notebook has been run");
-        for (Interpreter interpreter: group) {
-          PersistentInterpreterStarter.startPersistentInterpreter(interpreter);
+        for (List<Interpreter> intpCollect: group.values()) {
+          for (Interpreter intp: intpCollect) {
+            PersistentInterpreterStarter.startPersistentInterpreter(intp);
+          }
         }
       }
     }
@@ -148,31 +143,36 @@ public class PersistentIntpsAndBootstrapNotes implements Runnable {
 
   private static boolean proceedWithBootStrap(InterpreterSetting setting) {
     // Only spark interpreters can be persistent or have bootstrap notebooks
-    if (QuboleInterpreterUtils.sparkInterpreterGroupName.equals(setting.getGroup())) {
+    if (QuboleUtil.sparkInterpreterGroupName.equals(setting.getGroup())) {
       return true;
     }
     return false;
   }
 
   private static boolean isInterpreterUp(InterpreterSetting setting) {
-    InterpreterGroup group = setting.getInterpreterGroup();
+    InterpreterGroup group = setting.getInterpreterGroup(null);
     RemoteInterpreterProcess intpProcess = group.getRemoteInterpreterProcess();
 
     //Check whether Remote interpreter is running
     if (intpProcess == null || !intpProcess.isRunning()) {
       return false;
     }
-    for (Interpreter intp: group) {
-      if (intp.restartRequired()) {
-        return false;
+    Client client = null;
+    try {
+      client = group.getRemoteInterpreterProcess().getClient();
+    } catch (Exception e) {
+      LOG.info("Error whlile trying to get client for remote interpreter. Will restart", e);
+      return false;
+    } finally {
+      try {
+        if (client != null) {
+          group.getRemoteInterpreterProcess().releaseClient(client);
+        }
+      } catch (Exception e) {
+        LOG.debug("Exception while trying to release client", e);
       }
     }
     return true;
-  }
-
-  /*This methods are only to be used by Unit tests */
-  public static void changeAccountFeatureForUnitTest(boolean val) {
-    ACCOUNT_FEATURE = val;
   }
 
   public static String getPeristentPropertyForUnitTest() {
