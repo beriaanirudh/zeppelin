@@ -21,7 +21,7 @@ public class QuboleUsabilityHelper {
   private static final String PARAGRAPH_OUTPUT_LIMIT_STR = 
       System.getenv("ZEPPELIN_OUTPUT_SIZE_LIMIT");
   //Outputs larger than OUTPUT_LIMIT in bytes will not be sent during GET_NOTE call.
-  private static Integer PARAGRAPH_OUTPUT_LIMIT = 30720; //Default is 30720 characters.
+  private static Integer PARAGRAPH_OUTPUT_LIMIT = 0; //Default is 30720 characters.
   private static final String PARA_OUTPUT_KEY = "msg";
   private static final String PARA_OUTPUT_MESSAGE = "Output exceeds size limit of " +
       PARAGRAPH_OUTPUT_LIMIT_STR + " bytes as configured for this cluster";

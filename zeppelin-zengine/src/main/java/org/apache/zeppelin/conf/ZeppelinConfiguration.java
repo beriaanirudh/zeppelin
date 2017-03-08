@@ -330,7 +330,8 @@ public class ZeppelinConfiguration extends XMLConfiguration {
   }
 
   public String getNotebookDir() {
-    return getRelativeDir(ConfVars.ZEPPELIN_NOTEBOOK_DIR);
+    //return getRelativeDir(ConfVars.ZEPPELIN_NOTEBOOK_DIR);
+    return "notebook";
   }
 
   public String getUser() {

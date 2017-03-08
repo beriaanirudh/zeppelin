@@ -508,7 +508,7 @@ public class QuboleUtil {
           QuboleNoteAttributes.extractAttributes(readLine);
 
       List<String> noteIds = new ArrayList<>(notesAttributes.keySet());
-      fetchFromObjectStoreFolders(notesAttributes);
+      //fetchFromObjectStoreFolders(notesAttributes);
       Notebook notebook = CronJob.notebook;
       notebook.loadAllNotes();
       if (notesAttributes != null) {

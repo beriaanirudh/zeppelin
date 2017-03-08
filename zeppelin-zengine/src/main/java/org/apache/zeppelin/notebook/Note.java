@@ -547,10 +547,19 @@ public class Note implements Serializable, JobListener {
   }
 
   private InterpreterSetting getSettingFromInterpreter(Interpreter interpreter) {
-    InterpreterGroup intpGroup = interpreter.getInterpreterGroup();
-    String settingId = intpGroup.getId();
     InterpreterFactory intpFactory = CronJob.notebook.getInterpreterFactory();
-    return intpFactory.get(settingId);
+    for (InterpreterSetting setting: intpFactory.get()) {
+      for (InterpreterGroup group: setting.getAllInterpreterGroups()) {
+        for (List<Interpreter> intps: group.values()) {
+          for (Interpreter intp: intps) {
+            if (interpreter.equals(intp)) {
+              return setting;
+            }
+          }
+        }
+      }
+    }
+    return null;
   }
 
   public List<InterpreterCompletion> completion(String paragraphId, String buffer, int cursor) {

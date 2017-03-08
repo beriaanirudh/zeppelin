@@ -15,6 +15,7 @@ import org.apache.zeppelin.interpreter.remote.RemoteInterpreterProcess;
 import org.apache.zeppelin.interpreter.thrift.RemoteInterpreterService.Client;
 import org.apache.zeppelin.notebook.Note;
 import org.apache.zeppelin.notebook.Notebook;
+import org.apache.zeppelin.notebook.NoteInterpreterLoader;
 import org.apache.zeppelin.notebook.Notebook.CronJob;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,7 +72,7 @@ public class PersistentIntpsAndBootstrapNotes implements Runnable {
        * stop other interpreters.
        */
       try {
-        InterpreterGroup intpGroup = setting.getInterpreterGroup(null);
+        InterpreterGroup intpGroup = setting.getInterpreterGroup(NoteInterpreterLoader.SHARED_SESSION);
         String email = intpGroup.getProperty(QuboleUtil.SPARK_YARN_QUEUE);
         //find userId from email, else qubole events wont have email
         String userId = QuboleUtil.getUserForEmail(email);
@@ -131,6 +132,7 @@ public class PersistentIntpsAndBootstrapNotes implements Runnable {
        */
       if (!ranParaForIntp) {
         intpFactory.restart(setting.id());
+        intpFactory.createInterpretersForNote(setting, NoteInterpreterLoader.SHARED_SESSION, NoteInterpreterLoader.SHARED_SESSION);
         InterpreterGroup group = setting.getInterpreterGroup(null);
         LOG.info("Starting persistent interpreter = " + setting.getName() + " with id = " + setting.id()
                  + "since either there was no bootstrap notebook or"
@@ -163,7 +165,7 @@ public class PersistentIntpsAndBootstrapNotes implements Runnable {
   }
 
   private static boolean isInterpreterUp(InterpreterSetting setting) {
-    InterpreterGroup group = setting.getInterpreterGroup(null);
+    InterpreterGroup group = setting.getInterpreterGroup(NoteInterpreterLoader.SHARED_SESSION);
     RemoteInterpreterProcess intpProcess = group.getRemoteInterpreterProcess();
 
     //Check whether Remote interpreter is running
